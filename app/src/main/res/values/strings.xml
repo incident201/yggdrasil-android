@@ -96,6 +96,8 @@
     <string name="exit_vpn_remote_port">Remote UDP port</string>
     <string name="exit_vpn_local_port">Local UDP port</string>
     <string name="exit_vpn_dns_servers">DNS servers (comma-separated)</string>
-    <string name="exit_vpn_excluded_apps">Excluded apps (comma-separated package names)</string>
+    <string name="exit_vpn_excluded_apps">Excluded apps</string>
+    <string name="exit_vpn_select_excluded_apps">Select excluded apps</string>
+    <string name="exit_vpn_excluded_apps_none">No excluded apps selected</string>
     <string name="exit_vpn_hint">These are app-level runtime settings for Exit VPN mode and are stored separately from node configuration.</string>
 </resources>
