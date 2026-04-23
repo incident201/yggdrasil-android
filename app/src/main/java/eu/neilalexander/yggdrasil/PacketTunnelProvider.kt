@@ -1,6 +1,7 @@
 package eu.neilalexander.yggdrasil
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.VpnService
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -44,6 +45,7 @@ open class PacketTunnelProvider: VpnService() {
     private var readerStream: FileInputStream? = null
     private var writerStream: FileOutputStream? = null
     private var multicastLock: WifiManager.MulticastLock? = null
+    private var exitModeEnabled = false
 
     override fun onCreate() {
         super.onCreate()
@@ -113,46 +115,13 @@ open class PacketTunnelProvider: VpnService() {
         Log.d(TAG, config.getJSON().toString())
         yggdrasil.startJSON(config.getJSONByteArray())
 
-        val address = yggdrasil.addressString
-        val builder = Builder()
-            .addAddress(address, 7)
-            .addRoute("200::", 7)
-            // We do this to trick the DNS-resolver into thinking that we have "regular" IPv6,
-            // and therefore we need to resolve AAAA DNS-records.
-            // See: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/dns/net/getaddrinfo.c#1935
-            // and: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/dns/net/getaddrinfo.c#365
-            // If we don't do this the DNS-resolver just doesn't do DNS-requests with record type AAAA,
-            // and we can't use DNS with Yggdrasil addresses.
-            .addRoute("2000::", 128)
-            .allowFamily(OsConstants.AF_INET)
-            .allowBypass()
-            .setBlocking(true)
-            .setMtu(yggdrasil.mtu.toInt())
-            .setSession("Yggdrasil")
-        // On Android API 29+ apps can opt-in/out to using metered networks.
-        // If we don't set metered status of VPN it is considered as metered.
-        // If we set it to false, then it will inherit this status from underlying network.
-        // See: https://developer.android.com/reference/android/net/VpnService.Builder#setMetered(boolean)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            builder.setMetered(false)
+        val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        exitModeEnabled = appPreferences.getBoolean(PREF_KEY_EXIT_MODE, false)
+        parcel = if (exitModeEnabled) {
+            startExitMode(appPreferences)
+        } else {
+            startNormalMode()
         }
-
-        val preferences = PreferenceManager.getDefaultSharedPreferences(this.baseContext)
-        val serverString = preferences.getString(KEY_DNS_SERVERS, "")
-        if (serverString!!.isNotEmpty()) {
-            val servers = serverString.split(",")
-            if (servers.isNotEmpty()) {
-                servers.forEach {
-                    Log.i(TAG, "Using DNS server $it")
-                    builder.addDnsServer(it)
-                }
-            }
-        }
-        if (preferences.getBoolean(KEY_ENABLE_CHROME_FIX, false)) {
-            builder.addRoute("2001:4860:4860::8888", 128)
-        }
-
-        parcel = builder.establish()
         val parcel = parcel
         if (parcel == null || !parcel.fileDescriptor.valid()) {
             stop()
@@ -162,12 +131,8 @@ open class PacketTunnelProvider: VpnService() {
         readerStream = FileInputStream(parcel.fileDescriptor)
         writerStream = FileOutputStream(parcel.fileDescriptor)
 
-        readerThread = thread {
-            reader()
-        }
-        writerThread = thread {
-            writer()
-        }
+        readerThread = thread { reader() }
+        writerThread = thread { writer() }
         updateThread = thread {
             updater()
         }
@@ -182,7 +147,15 @@ open class PacketTunnelProvider: VpnService() {
             return
         }
 
+        if (exitModeEnabled) {
+            try {
+                yggdrasil.closeTunnel()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error while closing tunnel", e)
+            }
+        }
         yggdrasil.stop()
+        exitModeEnabled = false
 
         readerStream?.let {
             it.close()
@@ -285,6 +258,14 @@ open class PacketTunnelProvider: VpnService() {
     }
 
     private fun writer() {
+        if (exitModeEnabled) {
+            exitWriter()
+            return
+        }
+        normalWriter()
+    }
+
+    private fun normalWriter() {
         val buf = ByteArray(65535)
         writes@ while (started.get()) {
             val writerStream = writerStream
@@ -318,7 +299,47 @@ open class PacketTunnelProvider: VpnService() {
         }
     }
 
+    private fun exitWriter() {
+        val buf = ByteArray(65535)
+        writes@ while (started.get()) {
+            val writerStream = writerStream
+            val writerThread = writerThread
+            if (writerThread == null || writerStream == null) {
+                Log.i(TAG, "Write thread or stream is null")
+                break@writes
+            }
+            if (Thread.currentThread().isInterrupted || !writerStream.fd.valid()) {
+                Log.i(TAG, "Write thread interrupted or file descriptor is invalid")
+                break@writes
+            }
+            try {
+                val len = yggdrasil.recvTunnelBuffer(buf)
+                if (len > 0) {
+                    writerStream.write(buf, 0, len.toInt())
+                }
+            } catch (e: Exception) {
+                Log.i(TAG, "Error in recvTunnelBuffer: $e")
+                if (e.toString().contains("ENOBUFS")) {
+                    continue
+                }
+                break@writes
+            }
+        }
+        writerStream?.let {
+            it.close()
+            writerStream = null
+        }
+    }
+
     private fun reader() {
+        if (exitModeEnabled) {
+            exitReader()
+            return
+        }
+        normalReader()
+    }
+
+    private fun normalReader() {
         val b = ByteArray(65535)
         reads@ while (started.get()) {
             val readerStream = readerStream
@@ -343,5 +364,148 @@ open class PacketTunnelProvider: VpnService() {
             it.close()
             readerStream = null
         }
+    }
+
+    private fun exitReader() {
+        val b = ByteArray(65535)
+        reads@ while (started.get()) {
+            val readerStream = readerStream
+            val readerThread = readerThread
+            if (readerThread == null || readerStream == null) {
+                Log.i(TAG, "Read thread or stream is null")
+                break@reads
+            }
+            if (Thread.currentThread().isInterrupted || !readerStream.fd.valid()) {
+                Log.i(TAG, "Read thread interrupted or file descriptor is invalid")
+                break@reads
+            }
+            try {
+                val n = readerStream.read(b)
+                if (n <= 0) {
+                    continue
+                }
+                try {
+                    yggdrasil.sendTunnelBuffer(b, n.toLong())
+                } catch (e: Exception) {
+                    Log.i(TAG, "Error in sendTunnelBuffer: $e")
+                    break@reads
+                }
+            } catch (e: Exception) {
+                Log.i(TAG, "Error in exit reader: $e")
+                break@reads
+            }
+        }
+        readerStream?.let {
+            it.close()
+            readerStream = null
+        }
+    }
+
+    private fun startNormalMode(): ParcelFileDescriptor? {
+        val address = yggdrasil.addressString
+        val builder = Builder()
+            .addAddress(address, 7)
+            .addRoute("200::", 7)
+            // We do this to trick the DNS-resolver into thinking that we have "regular" IPv6,
+            // and therefore we need to resolve AAAA DNS-records.
+            // See: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/dns/net/getaddrinfo.c#1935
+            // and: https://android.googlesource.com/platform/bionic/+/refs/heads/master/libc/dns/net/getaddrinfo.c#365
+            // If we don't do this the DNS-resolver just doesn't do DNS-requests with record type AAAA,
+            // and we can't use DNS with Yggdrasil addresses.
+            .addRoute("2000::", 128)
+            .allowFamily(OsConstants.AF_INET)
+            .allowBypass()
+            .setBlocking(true)
+            .setMtu(yggdrasil.mtu.toInt())
+            .setSession("Yggdrasil")
+        // On Android API 29+ apps can opt-in/out to using metered networks.
+        // If we don't set metered status of VPN it is considered as metered.
+        // If we set it to false, then it will inherit this status from underlying network.
+        // See: https://developer.android.com/reference/android/net/VpnService.Builder#setMetered(boolean)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            builder.setMetered(false)
+        }
+
+        val preferences = PreferenceManager.getDefaultSharedPreferences(this.baseContext)
+        val serverString = preferences.getString(KEY_DNS_SERVERS, "")
+        if (serverString!!.isNotEmpty()) {
+            val servers = serverString.split(",")
+            if (servers.isNotEmpty()) {
+                servers.forEach {
+                    Log.i(TAG, "Using DNS server $it")
+                    builder.addDnsServer(it)
+                }
+            }
+        }
+        if (preferences.getBoolean(KEY_ENABLE_CHROME_FIX, false)) {
+            builder.addRoute("2001:4860:4860::8888", 128)
+        }
+        return builder.establish()
+    }
+
+    private fun startExitMode(preferences: SharedPreferences): ParcelFileDescriptor? {
+        val remoteAddr = preferences.getString(PREF_KEY_EXIT_REMOTE_ADDR, "")?.trim().orEmpty()
+        val remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "")?.trim().orEmpty().toLongOrNull()
+        val localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "")?.trim().orEmpty().toLongOrNull()
+        if (remoteAddr.isEmpty() || remotePort == null || localPort == null) {
+            Log.e(TAG, "Exit mode is enabled but remote address/ports are not configured")
+            return null
+        }
+        if (remotePort <= 0 || localPort <= 0) {
+            Log.e(TAG, "Exit mode remote/local ports must be positive values")
+            return null
+        }
+
+        val effectiveMtu = yggdrasil.mtu.toInt() - 48
+        if (effectiveMtu <= 0) {
+            Log.e(TAG, "Invalid effective MTU for exit mode: $effectiveMtu")
+            return null
+        }
+
+        val builder = Builder()
+            .addAddress("10.66.0.2", 24)
+            .addRoute("0.0.0.0", 0)
+            .allowFamily(OsConstants.AF_INET)
+            .allowBypass()
+            .setBlocking(true)
+            .setMtu(effectiveMtu)
+            .setSession("Yggdrasil Exit")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            builder.setMetered(false)
+        }
+
+        val dnsServers = preferences.getString(PREF_KEY_EXIT_DNS_SERVERS, "")?.trim().orEmpty()
+        val servers = if (dnsServers.isNotEmpty()) {
+            dnsServers.split(",")
+        } else {
+            listOf("1.1.1.1")
+        }
+        servers.forEach {
+            val dnsServer = it.trim()
+            if (dnsServer.isNotEmpty()) {
+                builder.addDnsServer(dnsServer)
+            }
+        }
+
+        preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.forEach { packageName ->
+                try {
+                    builder.addDisallowedApplication(packageName)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to exclude app $packageName", e)
+                }
+            }
+
+        try {
+            yggdrasil.openTunnel(remoteAddr, remotePort, localPort)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open exit tunnel", e)
+            return null
+        }
+
+        return builder.establish()
     }
 }

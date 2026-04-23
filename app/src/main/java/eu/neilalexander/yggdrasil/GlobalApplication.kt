@@ -12,6 +12,13 @@ import androidx.preference.PreferenceManager
 
 const val PREF_KEY_ENABLED = "enabled"
 const val PREF_KEY_PEERS_NOTE = "peers_note"
+const val APP_SETTINGS_NAME = "app_settings"
+const val PREF_KEY_EXIT_MODE = "exit_mode"
+const val PREF_KEY_EXIT_REMOTE_ADDR = "exit_remote_addr"
+const val PREF_KEY_EXIT_REMOTE_PORT = "exit_remote_port"
+const val PREF_KEY_EXIT_LOCAL_PORT = "exit_local_port"
+const val PREF_KEY_EXIT_DNS_SERVERS = "exit_dns_servers"
+const val PREF_KEY_EXIT_EXCLUDED_APPS = "exit_excluded_apps"
 const val MAIN_CHANNEL_ID = "Yggdrasil Service"
 
 class GlobalApplication: Application(), YggStateReceiver.StateReceiver {

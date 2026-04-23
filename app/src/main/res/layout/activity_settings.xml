@@ -283,6 +283,120 @@
                         android:textAppearance="@style/TextAppearance.AppCompat.Small"
                         android:textSize="12sp" />
 
+                    <Space
+                        android:layout_width="match_parent"
+                        android:layout_height="32px" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16pt"
+                        android:layout_marginLeft="16pt"
+                        android:layout_marginEnd="8pt"
+                        android:layout_marginRight="8pt"
+                        android:layout_marginBottom="2pt"
+                        android:alpha="0.7"
+                        android:paddingRight="8pt"
+                        android:text="@string/exit_vpn_settings"
+                        android:textAllCaps="true"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textSize="12sp" />
+
+                    <androidx.appcompat.widget.LinearLayoutCompat
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8pt"
+                        android:layout_marginLeft="8pt"
+                        android:layout_marginEnd="8pt"
+                        android:layout_marginRight="8pt"
+                        android:background="@drawable/rounded"
+                        android:divider="#46878787"
+                        android:dividerPadding="4pt"
+                        android:paddingLeft="4pt"
+                        android:paddingTop="2pt"
+                        android:paddingRight="4pt"
+                        android:paddingBottom="2pt"
+                        android:showDividers="middle">
+
+                        <androidx.appcompat.widget.LinearLayoutCompat
+                            style="@style/SelectableItemStyle"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:text="@string/exit_vpn_enabled" />
+
+                            <Space
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <Switch
+                                android:id="@+id/exitModeSwitch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </androidx.appcompat.widget.LinearLayoutCompat>
+
+                        <EditText
+                            android:id="@+id/exitRemoteAddrEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_remote_addr"
+                            android:inputType="text"
+                            android:padding="8dp" />
+
+                        <EditText
+                            android:id="@+id/exitRemotePortEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_remote_port"
+                            android:inputType="number"
+                            android:padding="8dp" />
+
+                        <EditText
+                            android:id="@+id/exitLocalPortEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_local_port"
+                            android:inputType="number"
+                            android:padding="8dp" />
+
+                        <EditText
+                            android:id="@+id/exitDnsServersEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_dns_servers"
+                            android:inputType="text"
+                            android:padding="8dp" />
+
+                        <EditText
+                            android:id="@+id/exitExcludedAppsEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_excluded_apps"
+                            android:inputType="text"
+                            android:padding="8dp" />
+                    </androidx.appcompat.widget.LinearLayoutCompat>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16pt"
+                        android:layout_marginLeft="16pt"
+                        android:layout_marginTop="4pt"
+                        android:layout_marginBottom="4pt"
+                        android:layout_marginEnd="8pt"
+                        android:layout_marginRight="8pt"
+                        android:alpha="0.7"
+                        android:paddingRight="8pt"
+                        android:text="@string/exit_vpn_hint"
+                        android:textAllCaps="false"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textSize="12sp" />
+
                 </LinearLayout>
             </ScrollView>
 
