@@ -372,13 +372,21 @@
                             android:inputType="text"
                             android:padding="8dp" />
 
-                        <EditText
-                            android:id="@+id/exitExcludedAppsEntry"
+                        <Button
+                            android:id="@+id/exitExcludedAppsButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/exit_vpn_select_excluded_apps" />
+
+                        <TextView
+                            android:id="@+id/exitExcludedAppsSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
                             android:hint="@string/exit_vpn_excluded_apps"
-                            android:inputType="text"
-                            android:padding="8dp" />
+                            android:padding="8dp"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
                     </androidx.appcompat.widget.LinearLayoutCompat>
 
                     <TextView

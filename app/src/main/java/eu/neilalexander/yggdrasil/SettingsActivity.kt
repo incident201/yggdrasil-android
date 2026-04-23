@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -31,11 +32,18 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var exitRemotePortEntry: EditText
     private lateinit var exitLocalPortEntry: EditText
     private lateinit var exitDnsServersEntry: EditText
-    private lateinit var exitExcludedAppsEntry: EditText
+    private lateinit var exitExcludedAppsButton: Button
+    private lateinit var exitExcludedAppsSummary: TextView
     private lateinit var publicKeyLabel: TextView
     private lateinit var resetConfigurationRow: LinearLayoutCompat
     private lateinit var appSettings: SharedPreferences
     private var publicKeyReset = false
+    private var installedApps: List<InstalledAppInfo> = emptyList()
+
+    private data class InstalledAppInfo(
+        val label: String,
+        val packageName: String
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +59,23 @@ class SettingsActivity : AppCompatActivity() {
         exitRemotePortEntry = findViewById(R.id.exitRemotePortEntry)
         exitLocalPortEntry = findViewById(R.id.exitLocalPortEntry)
         exitDnsServersEntry = findViewById(R.id.exitDnsServersEntry)
-        exitExcludedAppsEntry = findViewById(R.id.exitExcludedAppsEntry)
+        exitExcludedAppsButton = findViewById(R.id.exitExcludedAppsButton)
+        exitExcludedAppsSummary = findViewById(R.id.exitExcludedAppsSummary)
         publicKeyLabel = findViewById(R.id.publicKeyLabel)
         resetConfigurationRow = findViewById(R.id.resetConfigurationRow)
+
+        installedApps = packageManager
+            .getInstalledApplications(PackageManager.GET_META_DATA)
+            .mapNotNull { appInfo ->
+                val label = packageManager.getApplicationLabel(appInfo).toString().trim()
+                val packageName = appInfo.packageName?.trim().orEmpty()
+                if (label.isNotEmpty() && packageName.isNotEmpty()) {
+                    InstalledAppInfo(label = label, packageName = packageName)
+                } else {
+                    null
+                }
+            }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
 
         deviceNameEntry.doOnTextChanged { text, _, _, _ ->
             config.updateJSON { cfg ->
@@ -84,8 +106,9 @@ class SettingsActivity : AppCompatActivity() {
         exitDnsServersEntry.doOnTextChanged { text, _, _, _ ->
             appSettings.edit().putString(PREF_KEY_EXIT_DNS_SERVERS, text?.toString().orEmpty()).apply()
         }
-        exitExcludedAppsEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_EXCLUDED_APPS, text?.toString().orEmpty()).apply()
+
+        exitExcludedAppsButton.setOnClickListener {
+            showExcludedAppsDialog()
         }
 
         findViewById<View>(R.id.deviceNameTableRow).setOnKeyListener { view, keyCode, event ->
@@ -172,7 +195,63 @@ class SettingsActivity : AppCompatActivity() {
         exitRemotePortEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_PORT, ""), TextView.BufferType.EDITABLE)
         exitLocalPortEntry.setText(appSettings.getString(PREF_KEY_EXIT_LOCAL_PORT, ""), TextView.BufferType.EDITABLE)
         exitDnsServersEntry.setText(appSettings.getString(PREF_KEY_EXIT_DNS_SERVERS, ""), TextView.BufferType.EDITABLE)
-        exitExcludedAppsEntry.setText(appSettings.getString(PREF_KEY_EXIT_EXCLUDED_APPS, ""), TextView.BufferType.EDITABLE)
+        updateExcludedAppsSummary()
+    }
+
+    private fun getExcludedPackagesFromSettings(): MutableSet<String> {
+        return appSettings
+            .getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
+            .orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toMutableSet()
+    }
+
+    private fun showExcludedAppsDialog() {
+        val selectedPackages = getExcludedPackagesFromSettings()
+        val appLabels = installedApps.map { "${it.label} (${it.packageName})" }.toTypedArray()
+        val checkedItems = installedApps.map { selectedPackages.contains(it.packageName) }.toBooleanArray()
+
+        AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
+            .setTitle(getString(R.string.exit_vpn_excluded_apps))
+            .setMultiChoiceItems(appLabels, checkedItems) { _, which, isChecked ->
+                val packageName = installedApps[which].packageName
+                if (isChecked) {
+                    selectedPackages.add(packageName)
+                } else {
+                    selectedPackages.remove(packageName)
+                }
+            }
+            .setPositiveButton(getString(R.string.save)) { dialog, _ ->
+                val value = selectedPackages
+                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
+                    .joinToString(",")
+                appSettings.edit().putString(PREF_KEY_EXIT_EXCLUDED_APPS, value).apply()
+                updateExcludedAppsSummary()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                dialog.cancel()
+            }
+            .show()
+    }
+
+    private fun updateExcludedAppsSummary() {
+        val selectedPackages = getExcludedPackagesFromSettings()
+        if (selectedPackages.isEmpty()) {
+            exitExcludedAppsSummary.text = getString(R.string.exit_vpn_excluded_apps_none)
+            return
+        }
+
+        val packageToLabel = installedApps.associate { it.packageName to it.label }
+        val displayText = selectedPackages
+            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+            .joinToString("\n") { packageName ->
+                val label = packageToLabel[packageName]
+                if (label != null) "$label ($packageName)" else packageName
+            }
+        exitExcludedAppsSummary.text = displayText
     }
 
     override fun onResume() {
