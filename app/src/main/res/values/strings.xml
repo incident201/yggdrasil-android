@@ -90,4 +90,12 @@
     <string name="set_keys">Set your own key</string>
     <string name="save">Save</string>
     <string name="no_browser_found_toast">No browser found to open the URL!</string>
+    <string name="exit_vpn_settings">Exit VPN</string>
+    <string name="exit_vpn_enabled">Enable Exit VPN</string>
+    <string name="exit_vpn_remote_addr">Remote Yggdrasil IPv6</string>
+    <string name="exit_vpn_remote_port">Remote UDP port</string>
+    <string name="exit_vpn_local_port">Local UDP port</string>
+    <string name="exit_vpn_dns_servers">DNS servers (comma-separated)</string>
+    <string name="exit_vpn_excluded_apps">Excluded apps (comma-separated package names)</string>
+    <string name="exit_vpn_hint">These are app-level runtime settings for Exit VPN mode and are stored separately from node configuration.</string>
 </resources>
