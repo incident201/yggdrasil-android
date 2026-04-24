@@ -365,10 +365,18 @@
                             android:padding="8dp" />
 
                         <EditText
-                            android:id="@+id/exitDnsServersEntry"
+                            android:id="@+id/exitDnsServer1Entry"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_dns_servers"
+                            android:hint="@string/exit_vpn_dns_server_1"
+                            android:inputType="text"
+                            android:padding="8dp" />
+
+                        <EditText
+                            android:id="@+id/exitDnsServer2Entry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/exit_vpn_dns_server_2"
                             android:inputType="text"
                             android:padding="8dp" />
 
