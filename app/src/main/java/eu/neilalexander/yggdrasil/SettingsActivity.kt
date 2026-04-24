@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -68,6 +69,11 @@ class SettingsActivity : AppCompatActivity() {
 
         installedApps = packageManager
             .getInstalledApplications(PackageManager.GET_META_DATA)
+            .filter { appInfo ->
+                val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                val hasLauncherEntry = packageManager.getLaunchIntentForPackage(appInfo.packageName) != null
+                !isSystemApp && hasLauncherEntry
+            }
             .mapNotNull { appInfo ->
                 val label = packageManager.getApplicationLabel(appInfo).toString().trim()
                 val packageName = appInfo.packageName?.trim().orEmpty()
@@ -227,7 +233,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showExcludedAppsDialog() {
         val selectedPackages = getExcludedPackagesFromSettings()
-        val appLabels = installedApps.map { "${it.label} (${it.packageName})" }.toTypedArray()
+        val appLabels = installedApps.map { it.label }.toTypedArray()
         val checkedItems = installedApps.map { selectedPackages.contains(it.packageName) }.toBooleanArray()
 
         AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
@@ -262,13 +268,14 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val packageToLabel = installedApps.associate { it.packageName to it.label }
-        val displayText = selectedPackages
+        val selectedLabels = selectedPackages
+            .mapNotNull { packageToLabel[it] }
             .sortedWith(String.CASE_INSENSITIVE_ORDER)
-            .joinToString("\n") { packageName ->
-                val label = packageToLabel[packageName]
-                if (label != null) "$label ($packageName)" else packageName
-            }
-        exitExcludedAppsSummary.text = displayText
+        exitExcludedAppsSummary.text = if (selectedLabels.isEmpty()) {
+            getString(R.string.exit_vpn_excluded_apps_none)
+        } else {
+            selectedLabels.joinToString("\n")
+        }
     }
 
     override fun onResume() {
