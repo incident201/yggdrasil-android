@@ -8,20 +8,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.ContextThemeWrapper
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.BaseAdapter
 import android.widget.*
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.json.JSONObject
+import java.util.concurrent.Executors
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var config: ConfigurationProxy
@@ -39,13 +42,12 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var publicKeyLabel: TextView
     private lateinit var resetConfigurationRow: LinearLayoutCompat
     private lateinit var appSettings: SharedPreferences
+    private lateinit var excludedAppsRepository: ExcludedAppsRepository
     private var publicKeyReset = false
-    private var installedApps: List<InstalledAppInfo> = emptyList()
-
-    private data class InstalledAppInfo(
-        val label: String,
-        val packageName: String
-    )
+    private var launcherApps: List<ExcludedAppsRepository.LauncherApp> = emptyList()
+    private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private val mainThreadHandler = Handler(Looper.getMainLooper())
+    private var areLauncherAppsLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
 
         config = ConfigurationProxy(applicationContext)
         appSettings = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        excludedAppsRepository = ExcludedAppsRepository(packageManager)
         inflater = LayoutInflater.from(this)
 
         deviceNameEntry = findViewById(R.id.deviceNameEntry)
@@ -66,24 +69,6 @@ class SettingsActivity : AppCompatActivity() {
         exitExcludedAppsSummary = findViewById(R.id.exitExcludedAppsSummary)
         publicKeyLabel = findViewById(R.id.publicKeyLabel)
         resetConfigurationRow = findViewById(R.id.resetConfigurationRow)
-
-        installedApps = packageManager
-            .getInstalledApplications(PackageManager.GET_META_DATA)
-            .filter { appInfo ->
-                val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                val hasLauncherEntry = packageManager.getLaunchIntentForPackage(appInfo.packageName) != null
-                !isSystemApp && hasLauncherEntry
-            }
-            .mapNotNull { appInfo ->
-                val label = packageManager.getApplicationLabel(appInfo).toString().trim()
-                val packageName = appInfo.packageName?.trim().orEmpty()
-                if (label.isNotEmpty() && packageName.isNotEmpty()) {
-                    InstalledAppInfo(label = label, packageName = packageName)
-                } else {
-                    null
-                }
-            }
-            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
 
         deviceNameEntry.doOnTextChanged { text, _, _, _ ->
             config.updateJSON { cfg ->
@@ -190,6 +175,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         updateView()
+        loadLauncherApps(filterSystemApps = true)
     }
 
     private fun updateView() {
@@ -232,20 +218,29 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showExcludedAppsDialog() {
+        if (!areLauncherAppsLoaded) {
+            Toast.makeText(this, R.string.exit_vpn_excluded_apps_loading, Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val selectedPackages = getExcludedPackagesFromSettings()
-        val appLabels = installedApps.map { it.label }.toTypedArray()
-        val checkedItems = installedApps.map { selectedPackages.contains(it.packageName) }.toBooleanArray()
+        val listView = ListView(this)
+        val adapter = ExcludedAppsAdapter(selectedPackages)
+        listView.adapter = adapter
+        listView.choiceMode = ListView.CHOICE_MODE_MULTIPLE
+        listView.setOnItemClickListener { _, _, position, _ ->
+            val packageName = launcherApps[position].packageName
+            if (selectedPackages.contains(packageName)) {
+                selectedPackages.remove(packageName)
+            } else {
+                selectedPackages.add(packageName)
+            }
+            adapter.notifyDataSetChanged()
+        }
 
         AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
             .setTitle(getString(R.string.exit_vpn_excluded_apps))
-            .setMultiChoiceItems(appLabels, checkedItems) { _, which, isChecked ->
-                val packageName = installedApps[which].packageName
-                if (isChecked) {
-                    selectedPackages.add(packageName)
-                } else {
-                    selectedPackages.remove(packageName)
-                }
-            }
+            .setView(listView)
             .setPositiveButton(getString(R.string.save)) { dialog, _ ->
                 val value = selectedPackages
                     .sortedWith(String.CASE_INSENSITIVE_ORDER)
@@ -267,15 +262,51 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
 
-        val packageToLabel = installedApps.associate { it.packageName to it.label }
+        val packageToLabel = launcherApps.associate { it.packageName to it.label }
         val selectedLabels = selectedPackages
-            .mapNotNull { packageToLabel[it] }
+            .map { packageToLabel[it] ?: it }
             .sortedWith(String.CASE_INSENSITIVE_ORDER)
         exitExcludedAppsSummary.text = if (selectedLabels.isEmpty()) {
             getString(R.string.exit_vpn_excluded_apps_none)
         } else {
             selectedLabels.joinToString("\n")
         }
+    }
+
+    private fun loadLauncherApps(filterSystemApps: Boolean) {
+        backgroundExecutor.execute {
+            val loadedApps = excludedAppsRepository.loadLauncherApps(filterSystemApps)
+            mainThreadHandler.post {
+                launcherApps = loadedApps
+                areLauncherAppsLoaded = true
+                updateExcludedAppsSummary()
+            }
+        }
+    }
+
+    private inner class ExcludedAppsAdapter(
+        private val selectedPackages: Set<String>
+    ) : BaseAdapter() {
+        override fun getCount(): Int = launcherApps.size
+
+        override fun getItem(position: Int): ExcludedAppsRepository.LauncherApp = launcherApps[position]
+
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val itemView = convertView ?: inflater.inflate(R.layout.item_excluded_app, parent, false)
+            val app = getItem(position)
+            itemView.findViewById<ImageView>(R.id.appIcon).setImageDrawable(app.icon)
+            itemView.findViewById<TextView>(R.id.appLabel).text = app.label
+            itemView.findViewById<CheckBox>(R.id.appCheckBox).isChecked =
+                selectedPackages.contains(app.packageName)
+            return itemView
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        backgroundExecutor.shutdownNow()
     }
 
     override fun onResume() {
