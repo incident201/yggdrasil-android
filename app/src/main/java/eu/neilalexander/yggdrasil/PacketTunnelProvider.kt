@@ -456,11 +456,7 @@ open class PacketTunnelProvider: VpnService() {
             return null
         }
 
-        val effectiveMtu = yggdrasil.mtu.toInt() - 48
-        if (effectiveMtu <= 0) {
-            Log.e(TAG, "Invalid effective MTU for exit mode: $effectiveMtu")
-            return null
-        }
+        val effectiveMtu = 1280
 
         val builder = Builder()
             .addAddress("10.66.0.2", 24)
