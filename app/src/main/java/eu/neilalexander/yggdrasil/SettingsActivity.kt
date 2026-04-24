@@ -31,7 +31,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var exitRemoteAddrEntry: EditText
     private lateinit var exitRemotePortEntry: EditText
     private lateinit var exitLocalPortEntry: EditText
-    private lateinit var exitDnsServersEntry: EditText
+    private lateinit var exitDnsServer1Entry: EditText
+    private lateinit var exitDnsServer2Entry: EditText
     private lateinit var exitExcludedAppsButton: Button
     private lateinit var exitExcludedAppsSummary: TextView
     private lateinit var publicKeyLabel: TextView
@@ -58,7 +59,8 @@ class SettingsActivity : AppCompatActivity() {
         exitRemoteAddrEntry = findViewById(R.id.exitRemoteAddrEntry)
         exitRemotePortEntry = findViewById(R.id.exitRemotePortEntry)
         exitLocalPortEntry = findViewById(R.id.exitLocalPortEntry)
-        exitDnsServersEntry = findViewById(R.id.exitDnsServersEntry)
+        exitDnsServer1Entry = findViewById(R.id.exitDnsServer1Entry)
+        exitDnsServer2Entry = findViewById(R.id.exitDnsServer2Entry)
         exitExcludedAppsButton = findViewById(R.id.exitExcludedAppsButton)
         exitExcludedAppsSummary = findViewById(R.id.exitExcludedAppsSummary)
         publicKeyLabel = findViewById(R.id.publicKeyLabel)
@@ -103,8 +105,17 @@ class SettingsActivity : AppCompatActivity() {
         exitLocalPortEntry.doOnTextChanged { text, _, _, _ ->
             appSettings.edit().putString(PREF_KEY_EXIT_LOCAL_PORT, text?.toString().orEmpty()).apply()
         }
-        exitDnsServersEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_DNS_SERVERS, text?.toString().orEmpty()).apply()
+        val updateExitDnsServers = {
+            val dns1 = exitDnsServer1Entry.text?.toString()?.trim().orEmpty()
+            val dns2 = exitDnsServer2Entry.text?.toString()?.trim().orEmpty()
+            val combined = listOf(dns1, dns2).filter { it.isNotEmpty() }.joinToString(",")
+            appSettings.edit().putString(PREF_KEY_EXIT_DNS_SERVERS, combined).apply()
+        }
+        exitDnsServer1Entry.doOnTextChanged { _, _, _, _ ->
+            updateExitDnsServers()
+        }
+        exitDnsServer2Entry.doOnTextChanged { _, _, _, _ ->
+            updateExitDnsServers()
         }
 
         exitExcludedAppsButton.setOnClickListener {
@@ -194,7 +205,13 @@ class SettingsActivity : AppCompatActivity() {
         exitRemoteAddrEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_ADDR, ""), TextView.BufferType.EDITABLE)
         exitRemotePortEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_PORT, ""), TextView.BufferType.EDITABLE)
         exitLocalPortEntry.setText(appSettings.getString(PREF_KEY_EXIT_LOCAL_PORT, ""), TextView.BufferType.EDITABLE)
-        exitDnsServersEntry.setText(appSettings.getString(PREF_KEY_EXIT_DNS_SERVERS, ""), TextView.BufferType.EDITABLE)
+        val savedDnsServers = appSettings.getString(PREF_KEY_EXIT_DNS_SERVERS, "").orEmpty()
+        val dnsServers = savedDnsServers
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+        exitDnsServer1Entry.setText(dnsServers.getOrNull(0).orEmpty(), TextView.BufferType.EDITABLE)
+        exitDnsServer2Entry.setText(dnsServers.getOrNull(1).orEmpty(), TextView.BufferType.EDITABLE)
         updateExcludedAppsSummary()
     }
 
