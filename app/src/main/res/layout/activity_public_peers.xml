@@ -7,6 +7,7 @@
     android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorSurface"
@@ -21,6 +22,25 @@
             app:navigationIcon="@drawable/ic_baseline_arrow_back_24"
             app:titleTextColor="?attr/colorOnSurface" />
 
+        <!-- Region filter chips -->
+        <HorizontalScrollView
+            android:id="@+id/regionChipScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/regionChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
+                app:singleSelection="false" />
+
+        </HorizontalScrollView>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <FrameLayout
@@ -28,19 +48,22 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
+        <!-- Loading spinner -->
         <ProgressBar
             android:id="@+id/publicPeersProgress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:visibility="gone" />
+            android:visibility="visible" />
 
+        <!-- Error state -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="16dp">
+            android:padding="32dp">
 
             <TextView
                 android:id="@+id/publicPeersError"
@@ -48,6 +71,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:textColor="?attr/colorOnSurface"
+                android:gravity="center"
                 android:visibility="gone"
                 android:layout_marginBottom="16dp" />
 
@@ -61,21 +85,20 @@
 
         </LinearLayout>
 
+        <!-- Main content -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <ExpandableListView
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/publicPeersListView"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:visibility="gone"
-                android:groupIndicator="@null"
-                android:divider="@null"
-                android:dividerHeight="0dp"
-                android:padding="8dp" />
+                android:clipToPadding="false"
+                android:paddingBottom="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/addSelectedButton"

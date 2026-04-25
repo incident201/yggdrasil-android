@@ -26,6 +26,8 @@
     <string name="dns_server_info_revertron">Сервер поддерживает разрешение обычных ICANN-доменов, ALFIS-доменов, OpenNIC-доменов.\n\nТакже блокирует рекламу, аналитику и вредоносные сайты.\n\nСервер поддерживается Revertron.</string>
     <string name="dns_server_info_dialog_title">Информация о сервере</string>
     <string name="ok">ОК</string>
+    <string name="notification_permission_title">Разрешить уведомления</string>
+    <string name="notification_permission_message">Yggdrasil VPN показывает постоянное уведомление пока VPN активен — это позволяет быстро отключиться прямо из шторки. Пожалуйста, разрешите уведомления для этой функции.</string>
     <string name="cancel">Отмена</string>
     <string name="remove">Удалить</string>
     <string name="add">Добавить</string>
@@ -87,6 +89,7 @@
     <string name="public_peers_already_added">Уже добавлен</string>
     <string name="public_peers_added_count">Добавлено %d пиров</string>
     <string name="public_peers_browse">Обзор публичных пиров</string>
+    <string name="public_peers_filter_all">Все</string>
     <string name="settings_warning_title">Предупреждение</string>
     <string name="settings_config">Конфигурация</string>
     <string name="settings_reset">Сбросить</string>

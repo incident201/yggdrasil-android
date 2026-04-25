@@ -1,10 +1,14 @@
 package eu.neilalexander.yggdrasil
 
+import android.Manifest
 import android.app.Activity
 import android.content.*
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.net.VpnService
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -18,13 +22,14 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import android.content.res.Configuration
+import eu.neilalexander.yggdrasil.BuildConfig
 import eu.neilalexander.yggdrasil.PacketTunnelProvider.Companion.STATE_INTENT
 import mobile.Mobile
 import org.json.JSONArray
 import java.util.Locale
 
 const val APP_WEB_URL = "https://github.com/yggdrasil-network/yggdrasil-android"
+private const val PREF_NOTIFICATION_ASKED = "notification_permission_asked"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var vpnButton: ImageButton
@@ -53,6 +58,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+            // Permission granted or denied — we just proceed either way
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -70,12 +80,23 @@ class MainActivity : AppCompatActivity() {
         peersCountText = findViewById(R.id.peersCountText)
         versionText = findViewById(R.id.versionText)
 
-        versionText.text = getString(R.string.version_label) + ": " + Mobile.getVersion()
+        // Show app version: use BuildConfig.VERSION_NAME + Go library version
+        val appVersion = BuildConfig.VERSION_NAME
+        val goVersion = try {
+            val v = Mobile.getVersion()
+            if (v.isNullOrEmpty() || v == "unknown") "" else v
+        } catch (e: Exception) { "" }
+        val displayVersion = if (goVersion.isNotEmpty()) {
+            "$appVersion ($goVersion)"
+        } else {
+            appVersion
+        }
+        versionText.text = getString(R.string.version_label) + ": " + displayVersion
 
-        // Update mode text
+        // ExitVPN is always on — ensure the pref is set
         val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
-        val exitMode = appPreferences.getBoolean(PREF_KEY_EXIT_MODE, false)
-        connectionModeText.text = if (exitMode) getString(R.string.mode_exit_vpn) else getString(R.string.mode_yggdrasil)
+        appPreferences.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
+        connectionModeText.text = getString(R.string.mode_exit_vpn)
 
         // VPN button click
         vpnButton.setOnClickListener {
@@ -127,6 +148,39 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateButtonState(false, false)
+
+        // Request notification permission on first launch (Android 13+)
+        requestNotificationPermissionIfNeeded()
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val prefs = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        if (prefs.getBoolean(PREF_NOTIFICATION_ASKED, false)) return
+
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (alreadyGranted) {
+            prefs.edit().putBoolean(PREF_NOTIFICATION_ASKED, true).apply()
+            return
+        }
+
+        // Show rationale dialog first
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.notification_permission_title))
+            .setMessage(getString(R.string.notification_permission_message))
+            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                dialog.dismiss()
+                prefs.edit().putBoolean(PREF_NOTIFICATION_ASKED, true).apply()
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                dialog.dismiss()
+                prefs.edit().putBoolean(PREF_NOTIFICATION_ASKED, true).apply()
+            }
+            .show()
     }
 
     override fun onResume() {
@@ -137,10 +191,8 @@ class MainActivity : AppCompatActivity() {
         val preferences = PreferenceManager.getDefaultSharedPreferences(this.baseContext)
         isVpnEnabled = preferences.getBoolean(PREF_KEY_ENABLED, false)
 
-        // Update mode text
-        val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
-        val exitMode = appPreferences.getBoolean(PREF_KEY_EXIT_MODE, false)
-        connectionModeText.text = if (exitMode) getString(R.string.mode_exit_vpn) else getString(R.string.mode_yggdrasil)
+        // ExitVPN always on
+        connectionModeText.text = getString(R.string.mode_exit_vpn)
 
         if (!isVpnEnabled) {
             updateButtonState(false, false)

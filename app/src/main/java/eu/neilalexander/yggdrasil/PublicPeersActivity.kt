@@ -9,15 +9,17 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseExpandableListAdapter
 import android.widget.CheckBox
-import android.widget.ExpandableListView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import org.json.JSONArray
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -34,20 +36,34 @@ data class PeerEntry(
     var isAlreadyAdded: Boolean = false
 )
 
+// A flat list item for the RecyclerView — either a region header, country header, or a peer
+sealed class PeerListItem {
+    data class RegionHeader(val name: String, val totalPeers: Int) : PeerListItem()
+    data class CountryHeader(val name: String, val peerCount: Int, val region: String) : PeerListItem()
+    data class PeerItem(val peer: PeerEntry) : PeerListItem()
+}
+
 class PublicPeersActivity : AppCompatActivity() {
     private lateinit var config: ConfigurationProxy
-    private lateinit var expandableListView: ExpandableListView
+    private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var errorText: TextView
     private lateinit var retryButton: MaterialButton
     private lateinit var addSelectedButton: MaterialButton
+    private lateinit var regionChipGroup: ChipGroup
+    private lateinit var regionChipScroll: View
 
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    private var regionMap: LinkedHashMap<String, MutableList<PeerEntry>> = linkedMapOf()
-    private var regionKeys: List<String> = emptyList()
-    private var adapter: PeersExpandableAdapter? = null
+    // regionName -> (countryName -> List<PeerEntry>)
+    private var regionMap: LinkedHashMap<String, LinkedHashMap<String, MutableList<PeerEntry>>> = linkedMapOf()
+    private var flatItems: MutableList<PeerListItem> = mutableListOf()
+    private var adapter: PeersRecyclerAdapter? = null
+
+    // Collapsed state for regions and countries
+    private val collapsedRegions = mutableSetOf<String>()
+    private val collapsedCountries = mutableSetOf<String>() // key: "region/country"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,11 +74,15 @@ class PublicPeersActivity : AppCompatActivity() {
         val toolbar = findViewById<MaterialToolbar>(R.id.publicPeersToolbar)
         toolbar.setNavigationOnClickListener { finish() }
 
-        expandableListView = findViewById(R.id.publicPeersListView)
+        recyclerView = findViewById(R.id.publicPeersListView)
         progressBar = findViewById(R.id.publicPeersProgress)
         errorText = findViewById(R.id.publicPeersError)
         retryButton = findViewById(R.id.publicPeersRetry)
         addSelectedButton = findViewById(R.id.addSelectedButton)
+        regionChipGroup = findViewById(R.id.regionChipGroup)
+        regionChipScroll = findViewById(R.id.regionChipScroll)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
         retryButton.setOnClickListener { loadPublicPeers() }
         addSelectedButton.setOnClickListener { addSelectedPeers() }
@@ -88,36 +108,39 @@ class PublicPeersActivity : AppCompatActivity() {
         progressBar.visibility = View.VISIBLE
         errorText.visibility = View.GONE
         retryButton.visibility = View.GONE
-        expandableListView.visibility = View.GONE
+        recyclerView.visibility = View.GONE
         addSelectedButton.visibility = View.GONE
+        regionChipGroup.visibility = View.GONE
+        regionChipScroll.visibility = View.GONE
 
         backgroundExecutor.execute {
             try {
                 val peers = fetchPeersFromGitHub()
                 val existingPeers = getExistingPeers()
 
-                for ((_, peerList) in peers) {
-                    for (peer in peerList) {
-                        if (existingPeers.contains(peer.uri)) {
-                            peer.isAlreadyAdded = true
+                for ((_, countryMap) in peers) {
+                    for ((_, peerList) in countryMap) {
+                        for (peer in peerList) {
+                            if (existingPeers.contains(peer.uri)) {
+                                peer.isAlreadyAdded = true
+                            }
                         }
                     }
                 }
 
                 mainHandler.post {
                     regionMap = peers
-                    regionKeys = peers.keys.toList()
-                    adapter = PeersExpandableAdapter()
-                    expandableListView.setAdapter(adapter)
+                    rebuildFlatList()
+                    setupRegionChips()
+
+                    adapter = PeersRecyclerAdapter()
+                    recyclerView.adapter = adapter
 
                     progressBar.visibility = View.GONE
-                    expandableListView.visibility = View.VISIBLE
+                    recyclerView.visibility = View.VISIBLE
                     addSelectedButton.visibility = View.VISIBLE
-
-                    // Expand all groups
-                    for (i in regionKeys.indices) {
-                        expandableListView.expandGroup(i)
-                    }
+                    regionChipGroup.visibility = View.VISIBLE
+                    regionChipScroll.visibility = View.VISIBLE
                 }
             } catch (e: Exception) {
                 Log.e("PublicPeers", "Failed to load peers", e)
@@ -131,6 +154,58 @@ class PublicPeersActivity : AppCompatActivity() {
         }
     }
 
+    private fun rebuildFlatList() {
+        flatItems.clear()
+        for ((regionName, countryMap) in regionMap) {
+            val totalPeers = countryMap.values.sumOf { it.size }
+            flatItems.add(PeerListItem.RegionHeader(regionName, totalPeers))
+
+            if (regionName !in collapsedRegions) {
+                for ((countryName, peerList) in countryMap) {
+                    val key = "$regionName/$countryName"
+                    flatItems.add(PeerListItem.CountryHeader(countryName, peerList.size, regionName))
+
+                    if (key !in collapsedCountries) {
+                        for (peer in peerList) {
+                            flatItems.add(PeerListItem.PeerItem(peer))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupRegionChips() {
+        regionChipGroup.removeAllViews()
+
+        // "All" chip
+        val allChip = Chip(this)
+        allChip.text = getString(R.string.public_peers_filter_all)
+        allChip.isCheckable = true
+        allChip.isChecked = true
+        allChip.setOnClickListener {
+            recyclerView.scrollToPosition(0)
+        }
+        regionChipGroup.addView(allChip)
+
+        for (regionName in regionMap.keys) {
+            val chip = Chip(this)
+            chip.text = regionName.replaceFirstChar { it.uppercase() }
+            chip.isCheckable = true
+            chip.setOnClickListener {
+                // Scroll to region
+                val pos = flatItems.indexOfFirst {
+                    it is PeerListItem.RegionHeader && it.name == regionName
+                }
+                if (pos >= 0) {
+                    (recyclerView.layoutManager as LinearLayoutManager)
+                        .scrollToPositionWithOffset(pos, 0)
+                }
+            }
+            regionChipGroup.addView(chip)
+        }
+    }
+
     private fun getExistingPeers(): Set<String> {
         val json = config.getJSON()
         val peersArray = json.optJSONArray("Peers") ?: JSONArray()
@@ -141,10 +216,9 @@ class PublicPeersActivity : AppCompatActivity() {
         return set
     }
 
-    private fun fetchPeersFromGitHub(): LinkedHashMap<String, MutableList<PeerEntry>> {
-        val result = linkedMapOf<String, MutableList<PeerEntry>>()
+    private fun fetchPeersFromGitHub(): LinkedHashMap<String, LinkedHashMap<String, MutableList<PeerEntry>>> {
+        val result = linkedMapOf<String, LinkedHashMap<String, MutableList<PeerEntry>>>()
 
-        // Fetch the list of directories (regions) from the GitHub API
         val apiUrl = "https://api.github.com/repos/yggdrasil-network/public-peers/contents"
         val connection = URL(apiUrl).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -167,7 +241,6 @@ class PublicPeersActivity : AppCompatActivity() {
             }
         }
 
-        // For each directory, fetch the .md files and parse peer URIs
         val peerPattern = Pattern.compile("((?:tcp|tls|quic|ws|wss)://[^\\s`]+)")
 
         for ((regionName, dirUrl) in directories) {
@@ -181,7 +254,7 @@ class PublicPeersActivity : AppCompatActivity() {
             dirConnection.disconnect()
 
             val filesArray = JSONArray(dirResponse)
-            val regionPeers = mutableListOf<PeerEntry>()
+            val countryMap = linkedMapOf<String, MutableList<PeerEntry>>()
 
             for (j in 0 until filesArray.length()) {
                 val file = filesArray.getJSONObject(j)
@@ -197,15 +270,23 @@ class PublicPeersActivity : AppCompatActivity() {
                             val fileContent = BufferedReader(InputStreamReader(fileConnection.inputStream)).readText()
                             fileConnection.disconnect()
 
-                            val country = fileName.removeSuffix(".md").replace("-", " ")
-                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                            val countryName = fileName.removeSuffix(".md")
+                                .split("-")
+                                .joinToString(" ") { word ->
+                                    word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                                }
 
+                            val peers = mutableListOf<PeerEntry>()
                             val matcher = peerPattern.matcher(fileContent)
                             while (matcher.find()) {
                                 val uri = matcher.group(1)?.trim()?.trimEnd('`')
                                 if (uri != null && uri.isNotEmpty()) {
-                                    regionPeers.add(PeerEntry(uri, country))
+                                    peers.add(PeerEntry(uri, countryName))
                                 }
+                            }
+
+                            if (peers.isNotEmpty()) {
+                                countryMap[countryName] = peers
                             }
                         } catch (e: Exception) {
                             Log.w("PublicPeers", "Failed to fetch $downloadUrl", e)
@@ -214,8 +295,8 @@ class PublicPeersActivity : AppCompatActivity() {
                 }
             }
 
-            if (regionPeers.isNotEmpty()) {
-                result[regionName] = regionPeers
+            if (countryMap.isNotEmpty()) {
+                result[regionName] = countryMap
             }
         }
 
@@ -230,13 +311,15 @@ class PublicPeersActivity : AppCompatActivity() {
                 json.put("Peers", peersArray)
             }
 
-            for ((_, peerList) in regionMap) {
-                for (peer in peerList) {
-                    if (peer.isSelected && !peer.isAlreadyAdded) {
-                        peersArray.put(peer.uri)
-                        peer.isAlreadyAdded = true
-                        peer.isSelected = false
-                        count++
+            for ((_, countryMap) in regionMap) {
+                for ((_, peerList) in countryMap) {
+                    for (peer in peerList) {
+                        if (peer.isSelected && !peer.isAlreadyAdded) {
+                            peersArray.put(peer.uri)
+                            peer.isAlreadyAdded = true
+                            peer.isSelected = false
+                            count++
+                        }
                     }
                 }
             }
@@ -244,78 +327,132 @@ class PublicPeersActivity : AppCompatActivity() {
 
         if (count > 0) {
             Toast.makeText(this, getString(R.string.public_peers_added_count, count), Toast.LENGTH_SHORT).show()
+            rebuildFlatList()
             adapter?.notifyDataSetChanged()
         }
     }
 
-    private inner class PeersExpandableAdapter : BaseExpandableListAdapter() {
-        private val inflater = LayoutInflater.from(this@PublicPeersActivity)
+    companion object {
+        private const val VIEW_TYPE_REGION = 0
+        private const val VIEW_TYPE_COUNTRY = 1
+        private const val VIEW_TYPE_PEER = 2
+    }
 
-        override fun getGroupCount(): Int = regionKeys.size
+    private inner class PeersRecyclerAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-        override fun getChildrenCount(groupPosition: Int): Int {
-            return regionMap[regionKeys[groupPosition]]?.size ?: 0
+        override fun getItemViewType(position: Int): Int = when (flatItems[position]) {
+            is PeerListItem.RegionHeader -> VIEW_TYPE_REGION
+            is PeerListItem.CountryHeader -> VIEW_TYPE_COUNTRY
+            is PeerListItem.PeerItem -> VIEW_TYPE_PEER
         }
 
-        override fun getGroup(groupPosition: Int): String = regionKeys[groupPosition]
-
-        override fun getChild(groupPosition: Int, childPosition: Int): PeerEntry {
-            return regionMap[regionKeys[groupPosition]]!![childPosition]
-        }
-
-        override fun getGroupId(groupPosition: Int): Long = groupPosition.toLong()
-
-        override fun getChildId(groupPosition: Int, childPosition: Int): Long = childPosition.toLong()
-
-        override fun hasStableIds(): Boolean = false
-
-        override fun getGroupView(groupPosition: Int, isExpanded: Boolean, convertView: View?, parent: ViewGroup?): View {
-            val view = convertView ?: inflater.inflate(R.layout.item_public_peer_group, parent, false)
-            val regionName = getGroup(groupPosition)
-            val peerCount = getChildrenCount(groupPosition)
-            view.findViewById<TextView>(R.id.regionName).text = regionName
-            view.findViewById<TextView>(R.id.regionCount).text = "$peerCount"
-            return view
-        }
-
-        override fun getChildView(groupPosition: Int, childPosition: Int, isLastChild: Boolean, convertView: View?, parent: ViewGroup?): View {
-            val view = convertView ?: inflater.inflate(R.layout.item_public_peer, parent, false)
-            val peer = getChild(groupPosition, childPosition)
-            val uriText = view.findViewById<TextView>(R.id.peerUri)
-            val countryText = view.findViewById<TextView>(R.id.peerCountry)
-            val checkBox = view.findViewById<CheckBox>(R.id.peerCheckBox)
-
-            uriText.text = peer.uri
-            countryText.text = peer.country
-
-            if (peer.isAlreadyAdded) {
-                checkBox.isChecked = true
-                checkBox.isEnabled = false
-                uriText.alpha = 0.5f
-                countryText.text = "${peer.country} — ${getString(R.string.public_peers_already_added)}"
-            } else {
-                checkBox.isChecked = peer.isSelected
-                checkBox.isEnabled = true
-                uriText.alpha = 1.0f
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val inflater = LayoutInflater.from(parent.context)
+            return when (viewType) {
+                VIEW_TYPE_REGION -> RegionViewHolder(
+                    inflater.inflate(R.layout.item_peer_region_header, parent, false)
+                )
+                VIEW_TYPE_COUNTRY -> CountryViewHolder(
+                    inflater.inflate(R.layout.item_peer_country_header, parent, false)
+                )
+                else -> PeerViewHolder(
+                    inflater.inflate(R.layout.item_public_peer, parent, false)
+                )
             }
+        }
 
-            view.setOnClickListener {
-                if (!peer.isAlreadyAdded) {
-                    peer.isSelected = !peer.isSelected
+        override fun getItemCount(): Int = flatItems.size
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            when (val item = flatItems[position]) {
+                is PeerListItem.RegionHeader -> (holder as RegionViewHolder).bind(item)
+                is PeerListItem.CountryHeader -> (holder as CountryViewHolder).bind(item)
+                is PeerListItem.PeerItem -> (holder as PeerViewHolder).bind(item.peer)
+            }
+        }
+
+        inner class RegionViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            private val nameText: TextView = view.findViewById(R.id.regionName)
+            private val countText: TextView = view.findViewById(R.id.regionCount)
+            private val arrowView: TextView = view.findViewById(R.id.regionArrow)
+
+            fun bind(item: PeerListItem.RegionHeader) {
+                nameText.text = item.name.replaceFirstChar { it.uppercase() }
+                countText.text = item.totalPeers.toString()
+                val collapsed = item.name in collapsedRegions
+                arrowView.text = if (collapsed) "▶" else "▼"
+
+                itemView.setOnClickListener {
+                    if (item.name in collapsedRegions) {
+                        collapsedRegions.remove(item.name)
+                    } else {
+                        collapsedRegions.add(item.name)
+                    }
+                    rebuildFlatList()
+                    notifyDataSetChanged()
+                }
+            }
+        }
+
+        inner class CountryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            private val nameText: TextView = view.findViewById(R.id.countryName)
+            private val countText: TextView = view.findViewById(R.id.countryCount)
+            private val arrowView: TextView = view.findViewById(R.id.countryArrow)
+
+            fun bind(item: PeerListItem.CountryHeader) {
+                nameText.text = item.name
+                countText.text = item.peerCount.toString()
+                val key = "${item.region}/${item.name}"
+                val collapsed = key in collapsedCountries
+                arrowView.text = if (collapsed) "▶" else "▼"
+
+                itemView.setOnClickListener {
+                    if (key in collapsedCountries) {
+                        collapsedCountries.remove(key)
+                    } else {
+                        collapsedCountries.add(key)
+                    }
+                    rebuildFlatList()
+                    notifyDataSetChanged()
+                }
+            }
+        }
+
+        inner class PeerViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            private val uriText: TextView = view.findViewById(R.id.peerUri)
+            private val countryText: TextView = view.findViewById(R.id.peerCountry)
+            private val checkBox: CheckBox = view.findViewById(R.id.peerCheckBox)
+
+            fun bind(peer: PeerEntry) {
+                uriText.text = peer.uri
+
+                if (peer.isAlreadyAdded) {
+                    countryText.text = getString(R.string.public_peers_already_added)
+                    countryText.visibility = View.VISIBLE
+                    checkBox.isChecked = true
+                    checkBox.isEnabled = false
+                    uriText.alpha = 0.5f
+                } else {
+                    countryText.visibility = View.GONE
                     checkBox.isChecked = peer.isSelected
+                    checkBox.isEnabled = true
+                    uriText.alpha = 1.0f
+                }
+
+                itemView.setOnClickListener {
+                    if (!peer.isAlreadyAdded) {
+                        peer.isSelected = !peer.isSelected
+                        checkBox.isChecked = peer.isSelected
+                    }
+                }
+
+                checkBox.setOnClickListener {
+                    if (!peer.isAlreadyAdded) {
+                        peer.isSelected = checkBox.isChecked
+                    }
                 }
             }
-
-            checkBox.setOnClickListener {
-                if (!peer.isAlreadyAdded) {
-                    peer.isSelected = checkBox.isChecked
-                }
-            }
-
-            return view
         }
-
-        override fun isChildSelectable(groupPosition: Int, childPosition: Int): Boolean = true
     }
 
     override fun onDestroy() {

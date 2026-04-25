@@ -238,7 +238,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         publicKeyLabel.text = key
 
-        exitModeSwitch.isChecked = appSettings.getBoolean(PREF_KEY_EXIT_MODE, false)
+        // ExitVPN is always enabled — force it on
+        appSettings.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
+        exitModeSwitch.isChecked = true
         exitRemoteAddrEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_ADDR, ""), TextView.BufferType.EDITABLE)
         exitRemotePortEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_PORT, ""), TextView.BufferType.EDITABLE)
         exitLocalPortEntry.setText(appSettings.getString(PREF_KEY_EXIT_LOCAL_PORT, ""), TextView.BufferType.EDITABLE)
@@ -336,7 +338,8 @@ class SettingsActivity : AppCompatActivity() {
         backgroundExecutor.execute {
             val loadedApps = excludedAppsRepository.loadLauncherApps(filterSystemApps)
             mainThreadHandler.post {
-                launcherApps = loadedApps
+                // Filter out our own app from the excluded apps list
+                launcherApps = loadedApps.filter { it.packageName != packageName }
                 areLauncherAppsLoaded = true
                 updateExcludedAppsSummary()
             }

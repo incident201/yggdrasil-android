@@ -31,6 +31,8 @@
     <string name="dns_server_info_revertron">The server supports resolving regular ICANN domains, ALFIS domains, OpenNIC domains.\n\nAlso, it blocks ads, analytics and malware websites.\n\nThe server is run by Revertron.</string>
     <string name="dns_server_info_dialog_title">Server info</string>
     <string name="ok">OK</string>
+    <string name="notification_permission_title">Allow Notifications</string>
+    <string name="notification_permission_message">Yggdrasil VPN shows a persistent notification while connected so you can quickly disconnect from the notification shade. Please allow notifications to enable this feature.</string>
     <string name="cancel">Cancel</string>
     <string name="remove">Remove</string>
     <string name="add">Add</string>
@@ -96,6 +98,7 @@
     <string name="public_peers_already_added">Already added</string>
     <string name="public_peers_added_count">Added %d peers</string>
     <string name="public_peers_browse">Browse Public Peers</string>
+    <string name="public_peers_filter_all">All</string>
 
     <!-- Settings -->
     <string name="settings_warning_title">Warning</string>

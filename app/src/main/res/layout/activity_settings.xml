@@ -74,7 +74,8 @@
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingTop="8dp"
-                        android:paddingBottom="8dp">
+                        android:paddingBottom="8dp"
+                        android:visibility="gone">
 
                         <TextView
                             android:layout_width="0dp"
@@ -264,6 +265,7 @@
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp"
                 app:strokeWidth="0dp"
+                android:visibility="gone"
                 style="@style/Widget.Material3.CardView.Filled">
 
                 <LinearLayout

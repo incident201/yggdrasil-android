@@ -483,10 +483,17 @@ open class PacketTunnelProvider: VpnService() {
             }
         }
 
+        // Always exclude our own app from the VPN tunnel
+        try {
+            builder.addDisallowedApplication(applicationContext.packageName)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to self-exclude app", e)
+        }
+
         preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
             ?.split(",")
             ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
+            ?.filter { it.isNotEmpty() && it != applicationContext.packageName }
             ?.forEach { packageName ->
                 try {
                     builder.addDisallowedApplication(packageName)
