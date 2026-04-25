@@ -31,6 +31,8 @@
     <string name="dns_server_info_revertron">The server supports resolving regular ICANN domains, ALFIS domains, OpenNIC domains.\n\nAlso, it blocks ads, analytics and malware websites.\n\nThe server is run by Revertron.</string>
     <string name="dns_server_info_dialog_title">Server info</string>
     <string name="ok">OK</string>
+    <string name="battery_optimization_title">Background Operation</string>
+    <string name="battery_optimization_message">To keep the VPN running reliably in the background, please disable battery optimization for Yggdrasil VPN. This prevents Android from stopping the VPN when the screen is off.</string>
     <string name="notification_permission_title">Allow Notifications</string>
     <string name="notification_permission_message">Yggdrasil VPN shows a persistent notification while connected so you can quickly disconnect from the notification shade. Please allow notifications to enable this feature.</string>
     <string name="cancel">Cancel</string>

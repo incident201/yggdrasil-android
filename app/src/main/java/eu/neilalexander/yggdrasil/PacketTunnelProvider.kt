@@ -67,6 +67,11 @@ open class PacketTunnelProvider: VpnService() {
         return when (intent.action ?: ACTION_STOP) {
             ACTION_STOP -> {
                 Log.d(TAG, "Stopping...")
+                // Clear the enabled flag so MainActivity doesn't re-start VPN on next open
+                PreferenceManager.getDefaultSharedPreferences(this.baseContext)
+                    .edit()
+                    .putBoolean(PREF_KEY_ENABLED, false)
+                    .apply()
                 stop(); START_NOT_STICKY
             }
             ACTION_CONNECT -> {
@@ -81,8 +86,12 @@ open class PacketTunnelProvider: VpnService() {
             ACTION_TOGGLE -> {
                 Log.d(TAG, "Toggling...")
                 if (started.get()) {
+                    PreferenceManager.getDefaultSharedPreferences(this.baseContext)
+                        .edit().putBoolean(PREF_KEY_ENABLED, false).apply()
                     stop(); START_NOT_STICKY
                 } else {
+                    PreferenceManager.getDefaultSharedPreferences(this.baseContext)
+                        .edit().putBoolean(PREF_KEY_ENABLED, true).apply()
                     start(); START_STICKY
                 }
             }

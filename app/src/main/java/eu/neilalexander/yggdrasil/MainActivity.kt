@@ -10,6 +10,8 @@ import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
@@ -30,6 +32,7 @@ import java.util.Locale
 
 const val APP_WEB_URL = "https://github.com/yggdrasil-network/yggdrasil-android"
 private const val PREF_NOTIFICATION_ASKED = "notification_permission_asked"
+private const val PREF_BATTERY_ASKED = "battery_optimization_asked"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var vpnButton: ImageButton
@@ -151,6 +154,31 @@ class MainActivity : AppCompatActivity() {
 
         // Request notification permission on first launch (Android 13+)
         requestNotificationPermissionIfNeeded()
+        // Request battery optimization exemption for stable background VPN
+        requestBatteryOptimizationExemptionIfNeeded()
+    }
+
+    private fun requestBatteryOptimizationExemptionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val prefs = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        if (prefs.getBoolean(PREF_BATTERY_ASKED, false)) return
+        prefs.edit().putBoolean(PREF_BATTERY_ASKED, true).apply()
+
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        if (pm.isIgnoringBatteryOptimizations(packageName)) return
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.battery_optimization_title))
+            .setMessage(getString(R.string.battery_optimization_message))
+            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                dialog.dismiss()
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+                try { startActivity(intent) } catch (e: Exception) { /* ignore */ }
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun requestNotificationPermissionIfNeeded() {

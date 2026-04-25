@@ -26,6 +26,8 @@
     <string name="dns_server_info_revertron">Сервер поддерживает разрешение обычных ICANN-доменов, ALFIS-доменов, OpenNIC-доменов.\n\nТакже блокирует рекламу, аналитику и вредоносные сайты.\n\nСервер поддерживается Revertron.</string>
     <string name="dns_server_info_dialog_title">Информация о сервере</string>
     <string name="ok">ОК</string>
+    <string name="battery_optimization_title">Работа в фоне</string>
+    <string name="battery_optimization_message">Чтобы VPN стабильно работал в фоновом режиме, отключите оптимизацию батареи для Yggdrasil VPN. Это предотвратит остановку VPN системой при выключенном экране.</string>
     <string name="notification_permission_title">Разрешить уведомления</string>
     <string name="notification_permission_message">Yggdrasil VPN показывает постоянное уведомление пока VPN активен — это позволяет быстро отключиться прямо из шторки. Пожалуйста, разрешите уведомления для этой функции.</string>
     <string name="cancel">Отмена</string>
