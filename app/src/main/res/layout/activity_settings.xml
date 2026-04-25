@@ -1,421 +1,576 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".PeersActivity">
+    android:fitsSystemWindows="true">
 
-    <FrameLayout
-        android:id="@+id/settings"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/settingsToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/settings_title"
+            app:navigationIcon="@drawable/ic_baseline_arrow_back_24"
+            app:titleTextColor="?attr/colorOnSurface" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:dividerPadding="4pt"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <LinearLayout
+            <!-- Exit VPN Section -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8pt"
-                    android:text="@string/main_settings"
-                    android:textColor="?attr/textDefault"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <Space
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-            </LinearLayout>
-
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" >
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:text="@string/node_info"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <TableLayout
-                        android:id="@+id/nodeInfoTableLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <TableRow
-                            android:id="@+id/deviceNameTableRow"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:clickable="true"
-                            android:paddingStart="4pt"
-                            android:paddingTop="4pt"
-                            android:paddingEnd="4pt"
-                            android:paddingBottom="4pt">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:text="@string/device_name"
-                                android:textColor="?attr/textDefault" />
-
-                            <EditText
-                                android:id="@+id/deviceNameEntry"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:background="@null"
-                                android:ems="10"
-                                android:hint="@string/tap_to_edit"
-                                android:inputType="textPersonName"
-                                android:padding="0pt"
-                                android:textAlignment="textEnd"
-                                android:textSize="14sp" />
-
-                        </TableRow>
-                    </TableLayout>
-
-                    <TextView
-                        android:id="@+id/textView6"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="2pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="4pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/node_info_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/public_key"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <TableLayout
-                        android:id="@+id/publicKeyTableLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <TableRow style="@style/SelectableItemStyle">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:orientation="horizontal">
-
-                                <TextView
-                                    android:id="@+id/publicKeyLabel"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:focusable="true"
-                                    android:fontFamily="monospace"
-                                    android:text="@string/public_key"
-                                    android:textSize="14sp" />
-
-                            </LinearLayout>
-                        </TableRow>
-                    </TableLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="2pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="4pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/public_key_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="32px" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/settings_config"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <androidx.appcompat.widget.LinearLayoutCompat
-                        android:id="@+id/backupTableLayout"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/resetKeysRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/regenerate_keys" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/setKeysRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/set_keys" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/resetConfigurationRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/reset_configuration"
-                                android:textColor="@android:color/holo_red_dark" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-                    </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginBottom="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/reset_configuration_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="32px" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
                         android:text="@string/exit_vpn_settings"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="4dp" />
 
-                    <androidx.appcompat.widget.LinearLayoutCompat
-                        android:orientation="vertical"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_hint"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:id="@+id/exitModePanel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
 
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            style="@style/SelectableItemStyle"
-                            android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/exit_vpn_enabled"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center_vertical"
-                                android:text="@string/exit_vpn_enabled" />
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/exitModeSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
 
-                            <Space
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
+                    </LinearLayout>
 
-                            <Switch
-                                android:id="@+id/exitModeSwitch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
 
-                        <EditText
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_server_desc"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:hint="@string/exit_vpn_remote_addr">
+
+                        <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/exitRemoteAddrEntry"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_remote_addr"
                             android:inputType="text"
-                            android:padding="8dp" />
+                            android:textSize="14sp" />
 
-                        <EditText
-                            android:id="@+id/exitRemotePortEntry"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_remote_port"
-                            android:inputType="number"
-                            android:padding="8dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                        <EditText
-                            android:id="@+id/exitLocalPortEntry"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_local_port"
-                            android:inputType="number"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/exitDnsServer1Entry"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_dns_server_1"
-                            android:inputType="text"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/exitDnsServer2Entry"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/exit_vpn_dns_server_2"
-                            android:inputType="text"
-                            android:padding="8dp" />
-
-                        <Button
-                            android:id="@+id/exitExcludedAppsButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="@string/exit_vpn_select_excluded_apps" />
-
-                        <TextView
-                            android:id="@+id/exitExcludedAppsSummary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:hint="@string/exit_vpn_excluded_apps"
-                            android:padding="8dp"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
-                    </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginBottom="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/exit_vpn_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="4dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:hint="@string/exit_vpn_remote_port">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/exitRemotePortEntry"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:hint="@string/exit_vpn_local_port">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/exitLocalPortEntry"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_dns_desc"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="4dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:hint="@string/exit_vpn_dns_server_1">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/exitDnsServer1Entry"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="4dp"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:hint="@string/exit_vpn_dns_server_2">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/exitDnsServer2Entry"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_excluded_desc"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:id="@+id/exitExcludedAppsSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_excluded_apps_none"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/exitExcludedAppsButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_select_excluded_apps"
+                        style="@style/Widget.Material3.Button.TonalButton" />
 
                 </LinearLayout>
-            </ScrollView>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Yggdrasil DNS Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/yggdrasil_dns_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/yggdrasil_dns_desc"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/dnsRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dns_activity_title"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/dnsValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginEnd="8dp" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_baseline_chevron_right_24" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Node Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/node_info"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/node_info_hint"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:hint="@string/device_name">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/deviceNameEntry"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:textSize="14sp" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/public_key"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/public_key_hint"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:id="@+id/publicKeyLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textIsSelectable="true"
+                        android:fontFamily="monospace"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurface" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Advanced Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/advanced_settings"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="12dp" />
+
+                    <View android:id="@+id/deviceNameTableRow"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/resetKeysRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/regenerate_keys"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/setKeysRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/set_keys"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/resetConfigurationRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reset_configuration"
+                            android:textSize="16sp"
+                            android:textColor="@color/vpn_error" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reset_configuration_hint"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Language Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/language_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="12dp" />
+
+                    <RadioGroup
+                        android:id="@+id/languageRadioGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioEnglish"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_english"
+                            android:textSize="16sp"
+                            android:paddingStart="8dp" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioRussian"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_russian"
+                            android:textSize="16sp"
+                            android:paddingStart="8dp" />
+
+                    </RadioGroup>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </FrameLayout>
-</LinearLayout>
+
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

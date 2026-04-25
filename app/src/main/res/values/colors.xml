@@ -1,10 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <!-- Material 3 Green VPN Theme - Light -->
+    <color name="md_theme_light_primary">#2E7D52</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#B2F2D1</color>
+    <color name="md_theme_light_onPrimaryContainer">#002114</color>
+    <color name="md_theme_light_secondary">#4E6355</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#D1E8D7</color>
+    <color name="md_theme_light_onSecondaryContainer">#0C1F14</color>
+    <color name="md_theme_light_tertiary">#3C6472</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#C0E9F9</color>
+    <color name="md_theme_light_onTertiaryContainer">#001F28</color>
+    <color name="md_theme_light_error">#BA1A1A</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_errorContainer">#FFDAD6</color>
+    <color name="md_theme_light_onErrorContainer">#410002</color>
+    <color name="md_theme_light_background">#F5FBF5</color>
+    <color name="md_theme_light_onBackground">#191C19</color>
+    <color name="md_theme_light_surface">#F5FBF5</color>
+    <color name="md_theme_light_onSurface">#191C19</color>
+    <color name="md_theme_light_surfaceVariant">#DCE5DC</color>
+    <color name="md_theme_light_onSurfaceVariant">#414942</color>
+    <color name="md_theme_light_outline">#717971</color>
+    <color name="md_theme_light_surfaceContainerLowest">#FFFFFF</color>
+    <color name="md_theme_light_surfaceContainerLow">#EFF5EF</color>
+    <color name="md_theme_light_surfaceContainer">#E9F0EA</color>
+    <color name="md_theme_light_surfaceContainerHigh">#E4EAE4</color>
+    <color name="md_theme_light_surfaceContainerHighest">#DEE4DE</color>
+
+    <!-- Material 3 Green VPN Theme - Dark -->
+    <color name="md_theme_dark_primary">#97D6B6</color>
+    <color name="md_theme_dark_onPrimary">#003825</color>
+    <color name="md_theme_dark_primaryContainer">#00513B</color>
+    <color name="md_theme_dark_onPrimaryContainer">#B2F2D1</color>
+    <color name="md_theme_dark_secondary">#B5CCBB</color>
+    <color name="md_theme_dark_onSecondary">#213528</color>
+    <color name="md_theme_dark_secondaryContainer">#374B3E</color>
+    <color name="md_theme_dark_onSecondaryContainer">#D1E8D7</color>
+    <color name="md_theme_dark_tertiary">#A4CDDD</color>
+    <color name="md_theme_dark_onTertiary">#053542</color>
+    <color name="md_theme_dark_tertiaryContainer">#224C59</color>
+    <color name="md_theme_dark_onTertiaryContainer">#C0E9F9</color>
+    <color name="md_theme_dark_error">#FFB4AB</color>
+    <color name="md_theme_dark_onError">#690005</color>
+    <color name="md_theme_dark_errorContainer">#93000A</color>
+    <color name="md_theme_dark_onErrorContainer">#FFDAD6</color>
+    <color name="md_theme_dark_background">#111411</color>
+    <color name="md_theme_dark_onBackground">#DEE4DE</color>
+    <color name="md_theme_dark_surface">#111411</color>
+    <color name="md_theme_dark_onSurface">#DEE4DE</color>
+    <color name="md_theme_dark_surfaceVariant">#414942</color>
+    <color name="md_theme_dark_onSurfaceVariant">#C0C9C0</color>
+    <color name="md_theme_dark_outline">#8A938B</color>
+    <color name="md_theme_dark_surfaceContainerLowest">#0C0F0C</color>
+    <color name="md_theme_dark_surfaceContainerLow">#191C19</color>
+    <color name="md_theme_dark_surfaceContainer">#1D201D</color>
+    <color name="md_theme_dark_surfaceContainerHigh">#282B28</color>
+    <color name="md_theme_dark_surfaceContainerHighest">#323632</color>
+
+    <!-- VPN status colors -->
+    <color name="vpn_connected">#4CAF50</color>
+    <color name="vpn_connecting">#FFC107</color>
+    <color name="vpn_disconnected">#9E9E9E</color>
+    <color name="vpn_error">#F44336</color>
+    <color name="vpn_button_connected">#2E7D52</color>
+    <color name="vpn_button_disconnected">#78909C</color>
+
+    <!-- Legacy compat -->
     <color name="green">#5FBF9F</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

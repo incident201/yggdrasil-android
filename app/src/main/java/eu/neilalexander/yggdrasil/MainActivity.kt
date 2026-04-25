@@ -1,39 +1,45 @@
 package eu.neilalexander.yggdrasil
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.*
-import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.net.VpnService
 import android.os.Bundle
-import android.view.ContextThemeWrapper
-import android.widget.Switch
+import android.view.View
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.content.res.Configuration
 import eu.neilalexander.yggdrasil.PacketTunnelProvider.Companion.STATE_INTENT
 import mobile.Mobile
 import org.json.JSONArray
+import java.util.Locale
 
 const val APP_WEB_URL = "https://github.com/yggdrasil-network/yggdrasil-android"
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var enabledSwitch: Switch
-    private lateinit var enabledLabel: TextView
-    private lateinit var ipAddressLabel: TextView
+    private lateinit var vpnButton: ImageButton
+    private lateinit var vpnButtonRing: View
+    private lateinit var statusText: TextView
+    private lateinit var connectionModeText: TextView
+    private lateinit var ipAddressText: TextView
     private lateinit var subnetLabel: TextView
-    private lateinit var peersLabel: TextView
-    private lateinit var peersRow: LinearLayoutCompat
-    private lateinit var dnsLabel: TextView
-    private lateinit var dnsRow: LinearLayoutCompat
-    private lateinit var settingsRow: LinearLayoutCompat
-    private lateinit var versionRow: LinearLayoutCompat
+    private lateinit var subnetText: TextView
+    private lateinit var copyIpButton: ImageButton
+    private lateinit var peersCountText: TextView
+    private lateinit var versionText: TextView
+
+    private var isVpnEnabled = false
+    private var isConnected = false
 
     private fun start() {
         val intent = Intent(this, PacketTunnelProvider::class.java)
@@ -43,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     private var startVpnActivity = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-           start()
+            start()
         }
     }
 
@@ -51,85 +57,76 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<TextView>(R.id.versionValue).text = Mobile.getVersion()
+        val toolbar = findViewById<MaterialToolbar>(R.id.topAppBar)
 
-        enabledSwitch = findViewById(R.id.enableYggdrasil)
-        enabledLabel = findViewById(R.id.yggdrasilStatusLabel)
-        ipAddressLabel = findViewById(R.id.ipAddressValue)
-        subnetLabel = findViewById(R.id.subnetValue)
-        peersLabel = findViewById(R.id.peersValue)
-        peersRow = findViewById(R.id.peersTableRow)
-        dnsLabel = findViewById(R.id.dnsValue)
-        dnsRow = findViewById(R.id.dnsTableRow)
-        settingsRow = findViewById(R.id.settingsTableRow)
-        versionRow = findViewById(R.id.versionTableRow)
+        vpnButton = findViewById(R.id.vpnButton)
+        vpnButtonRing = findViewById(R.id.vpnButtonRing)
+        statusText = findViewById(R.id.statusText)
+        connectionModeText = findViewById(R.id.connectionModeText)
+        ipAddressText = findViewById(R.id.ipAddressText)
+        subnetLabel = findViewById(R.id.subnetLabel)
+        subnetText = findViewById(R.id.subnetText)
+        copyIpButton = findViewById(R.id.copyIpButton)
+        peersCountText = findViewById(R.id.peersCountText)
+        versionText = findViewById(R.id.versionText)
 
-        enabledLabel.setTextColor(Color.GRAY)
+        versionText.text = getString(R.string.version_label) + ": " + Mobile.getVersion()
 
-        enabledSwitch.setOnCheckedChangeListener { _, isChecked ->
-            when (isChecked) {
-                true -> {
-                    val vpnIntent = VpnService.prepare(this)
-                    if (vpnIntent != null) {
-                        startVpnActivity.launch(vpnIntent)
-                    } else {
-                        start()
-                        enabledSwitch.isEnabled = false
-                    }
-                }
-                false -> {
-                    val intent = Intent(this, PacketTunnelProvider::class.java)
-                    intent.action = PacketTunnelProvider.ACTION_STOP
-                    startService(intent)
-                }
-            }
+        // Update mode text
+        val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val exitMode = appPreferences.getBoolean(PREF_KEY_EXIT_MODE, false)
+        connectionModeText.text = if (exitMode) getString(R.string.mode_exit_vpn) else getString(R.string.mode_yggdrasil)
+
+        // VPN button click
+        vpnButton.setOnClickListener {
             val preferences = PreferenceManager.getDefaultSharedPreferences(this.baseContext)
-            preferences.edit(commit = true) { putBoolean(PREF_KEY_ENABLED, isChecked) }
+            val enabled = preferences.getBoolean(PREF_KEY_ENABLED, false)
+            if (!enabled) {
+                // Start VPN
+                preferences.edit(commit = true) { putBoolean(PREF_KEY_ENABLED, true) }
+                val vpnIntent = VpnService.prepare(this)
+                if (vpnIntent != null) {
+                    startVpnActivity.launch(vpnIntent)
+                } else {
+                    start()
+                }
+            } else {
+                // Stop VPN
+                preferences.edit(commit = true) { putBoolean(PREF_KEY_ENABLED, false) }
+                val intent = Intent(this, PacketTunnelProvider::class.java)
+                intent.action = PacketTunnelProvider.ACTION_STOP
+                startService(intent)
+            }
         }
 
-        val enableYggdrasilPanel = findViewById<LinearLayoutCompat>(R.id.enableYggdrasilPanel)
-        enableYggdrasilPanel.setOnClickListener {
-            enabledSwitch.toggle()
-        }
-
-        peersRow.isClickable = true
-        peersRow.setOnClickListener {
-            val intent = Intent(this, PeersActivity::class.java)
-            startActivity(intent)
-        }
-
-        dnsRow.isClickable = true
-        dnsRow.setOnClickListener {
-            val intent = Intent(this, DnsActivity::class.java)
-            startActivity(intent)
-        }
-
-        settingsRow.isClickable = true
-        settingsRow.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-
-        versionRow.isClickable = true
-        versionRow.setOnClickListener {
-            openUrlInBrowser(APP_WEB_URL)
-        }
-
-        ipAddressLabel.setOnLongClickListener {
-            val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("ip", ipAddressLabel.text)
+        // Copy IP button
+        copyIpButton.setOnClickListener {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("ip", ipAddressText.text)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(applicationContext,R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+        }
+
+        // Peers row
+        findViewById<View>(R.id.peersRow).setOnClickListener {
+            startActivity(Intent(this, PeersActivity::class.java))
+        }
+
+        // Settings row
+        findViewById<View>(R.id.settingsRow).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        // Long press on IP to copy
+        ipAddressText.setOnLongClickListener {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("ip", ipAddressText.text)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(applicationContext, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
             true
         }
 
-        subnetLabel.setOnLongClickListener {
-            val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("subnet", subnetLabel.text)
-            clipboard.setPrimaryClip(clip)
-            Toast.makeText(applicationContext,R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
-            true
-        }
+        updateButtonState(false, false)
     }
 
     override fun onResume() {
@@ -138,18 +135,21 @@ class MainActivity : AppCompatActivity() {
             receiver, IntentFilter(STATE_INTENT)
         )
         val preferences = PreferenceManager.getDefaultSharedPreferences(this.baseContext)
-        enabledSwitch.isChecked = preferences.getBoolean(PREF_KEY_ENABLED, false)
-        val serverString = preferences.getString(KEY_DNS_SERVERS, "")
-        if (serverString!!.isNotEmpty()) {
-            val servers = serverString.split(",")
-            dnsLabel.text = when (servers.size) {
-                0 -> getString(R.string.dns_no_servers)
-                1 -> getString(R.string.dns_one_server)
-                else -> getString(R.string.dns_many_servers, servers.size)
-            }
-        } else {
-            dnsLabel.text = getString(R.string.dns_no_servers)
+        isVpnEnabled = preferences.getBoolean(PREF_KEY_ENABLED, false)
+
+        // Update mode text
+        val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val exitMode = appPreferences.getBoolean(PREF_KEY_EXIT_MODE, false)
+        connectionModeText.text = if (exitMode) getString(R.string.mode_exit_vpn) else getString(R.string.mode_yggdrasil)
+
+        if (!isVpnEnabled) {
+            updateButtonState(false, false)
+            ipAddressText.text = getString(R.string.not_connected)
+            copyIpButton.visibility = View.GONE
+            subnetLabel.visibility = View.GONE
+            subnetText.visibility = View.GONE
         }
+
         (application as GlobalApplication).subscribe()
     }
 
@@ -159,10 +159,41 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
     }
 
+    private fun updateButtonState(started: Boolean, connected: Boolean) {
+        isConnected = connected
+        if (started && connected) {
+            statusText.text = getString(R.string.status_connected)
+            statusText.setTextColor(ContextCompat.getColor(this, R.color.vpn_connected))
+            vpnButton.setBackgroundResource(R.drawable.vpn_button_background_connected)
+            updateRingColor(R.color.vpn_button_connected)
+        } else if (started) {
+            statusText.text = getString(R.string.status_no_connectivity)
+            statusText.setTextColor(ContextCompat.getColor(this, R.color.vpn_connecting))
+            vpnButton.setBackgroundResource(R.drawable.vpn_button_background_connected)
+            updateRingColor(R.color.vpn_connecting)
+        } else {
+            statusText.text = getString(R.string.status_disconnected)
+            statusText.setTextColor(ContextCompat.getColor(this, R.color.vpn_disconnected))
+            vpnButton.setBackgroundResource(R.drawable.vpn_button_background)
+            updateRingColor(R.color.vpn_button_disconnected)
+        }
+    }
+
+    private fun updateRingColor(colorRes: Int) {
+        val drawable = vpnButtonRing.background
+        if (drawable is GradientDrawable) {
+            drawable.setStroke(
+                (3 * resources.displayMetrics.density).toInt(),
+                ContextCompat.getColor(this, colorRes)
+            )
+        }
+    }
+
     private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
             when (intent.getStringExtra("type")) {
                 "state" -> {
+                    val started = intent.getBooleanExtra("started", false)
                     val peerState = JSONArray(intent.getStringExtra("peers") ?: "[]")
                     var count = 0
                     for (i in 0..<peerState.length()) {
@@ -171,30 +202,30 @@ class MainActivity : AppCompatActivity() {
                             count += 1
                         }
                     }
-                    enabledLabel.text = if (intent.getBooleanExtra("started", false)) {
+
+                    if (started) {
                         showPeersNoteIfNeeded(peerState.length())
-                        if (count == 0) {
-                            enabledLabel.setTextColor(Color.RED)
-                            getString(R.string.main_no_connectivity)
-                        } else {
-                            enabledLabel.setTextColor(Color.GREEN)
-                            getString(R.string.main_enabled)
+                        updateButtonState(true, count > 0)
+                        ipAddressText.text = intent.getStringExtra("ip") ?: "N/A"
+                        copyIpButton.visibility = View.VISIBLE
+                        val subnet = intent.getStringExtra("subnet") ?: ""
+                        if (subnet.isNotEmpty() && subnet != "N/A") {
+                            subnetLabel.visibility = View.VISIBLE
+                            subnetText.visibility = View.VISIBLE
+                            subnetText.text = subnet
                         }
                     } else {
-                        enabledLabel.setTextColor(Color.GRAY)
-                        getString(R.string.main_disabled)
+                        updateButtonState(false, false)
+                        ipAddressText.text = getString(R.string.not_connected)
+                        copyIpButton.visibility = View.GONE
+                        subnetLabel.visibility = View.GONE
+                        subnetText.visibility = View.GONE
                     }
-                    ipAddressLabel.text = intent.getStringExtra("ip") ?: "N/A"
-                    subnetLabel.text = intent.getStringExtra("subnet") ?: "N/A"
-                    if (intent.hasExtra("peers")) {
-                        peersLabel.text = when (count) {
-                            0 -> getString(R.string.main_no_peers)
-                            1 -> getString(R.string.main_one_peer)
-                            else -> getString(R.string.main_many_peers, count)
-                        }
-                    }
-                    if (!enabledSwitch.isEnabled) {
-                        enabledSwitch.isEnabled = true
+
+                    peersCountText.text = when (count) {
+                        0 -> getString(R.string.main_no_peers)
+                        1 -> getString(R.string.main_one_peer)
+                        else -> getString(R.string.main_many_peers, count)
                     }
                 }
             }
@@ -206,20 +237,32 @@ class MainActivity : AppCompatActivity() {
         val preferences = PreferenceManager.getDefaultSharedPreferences(this@MainActivity.baseContext)
         if (!preferences.getBoolean(PREF_KEY_PEERS_NOTE, false)) {
             this@MainActivity.runOnUiThread {
-                val builder: AlertDialog.Builder =
-                    AlertDialog.Builder(ContextThemeWrapper(this@MainActivity, R.style.YggdrasilDialogs))
-                builder.setTitle(getString(R.string.main_add_some_peers_title))
-                builder.setMessage(getString(R.string.main_add_some_peers_message))
-                builder.setPositiveButton(getString(R.string.ok)) { dialog, _ ->
-                    dialog.dismiss()
-                }
-                builder.show()
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle(getString(R.string.main_add_some_peers_title))
+                    .setMessage(getString(R.string.main_add_some_peers_message))
+                    .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .show()
             }
-            // Mark this note as shown
             preferences.edit().apply {
                 putBoolean(PREF_KEY_PEERS_NOTE, true)
                 commit()
             }
+        }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        val prefs = newBase.getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val lang = prefs.getString("app_language", "")
+        if (!lang.isNullOrEmpty()) {
+            val locale = Locale(lang)
+            Locale.setDefault(locale)
+            val config = Configuration(newBase.resources.configuration)
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
         }
     }
 
@@ -230,7 +273,6 @@ class MainActivity : AppCompatActivity() {
         try {
             startActivity(intent)
         } catch (e: ActivityNotFoundException) {
-            // Handle the exception if no browser is found
             Toast.makeText(this, getText(R.string.no_browser_found_toast), Toast.LENGTH_SHORT).show()
         }
     }

@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.util.Log
@@ -14,19 +15,21 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.Switch
 import android.widget.TableLayout
 import android.widget.TableRow
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doOnTextChanged
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URI
-
+import java.util.Locale
 
 class PeersActivity : AppCompatActivity() {
     private lateinit var config: ConfigurationProxy
@@ -37,8 +40,8 @@ class PeersActivity : AppCompatActivity() {
     private lateinit var connectedTableLabel: TextView
     private lateinit var configuredTableLayout: TableLayout
     private lateinit var configuredTableLabel: TextView
-    private lateinit var multicastListenSwitch: Switch
-    private lateinit var multicastBeaconSwitch: Switch
+    private lateinit var multicastListenSwitch: MaterialSwitch
+    private lateinit var multicastBeaconSwitch: MaterialSwitch
     private lateinit var passwordEdit: EditText
     private lateinit var addPeerButton: ImageButton
 
@@ -49,6 +52,10 @@ class PeersActivity : AppCompatActivity() {
         config = ConfigurationProxy(applicationContext)
         inflater = LayoutInflater.from(this)
         peers = emptyArray()
+
+        // Toolbar
+        val toolbar = findViewById<MaterialToolbar>(R.id.peersToolbar)
+        toolbar.setNavigationOnClickListener { finish() }
 
         connectedTableLayout = findViewById(R.id.connectedPeersTableLayout)
         connectedTableLabel = findViewById(R.id.connectedPeersLabel)
@@ -108,20 +115,20 @@ class PeersActivity : AppCompatActivity() {
             val view = inflater.inflate(R.layout.dialog_addpeer, null)
             val input = view.findViewById<TextInputEditText>(R.id.addPeerInput)
             val inputLayout = view.findViewById<TextInputLayout>(R.id.addPeerInputLayout)
-            val builder: AlertDialog.Builder = AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
-            builder.setTitle(getString(R.string.peers_add_peer))
-            builder.setView(view)
-            builder.setPositiveButton(getString(R.string.peers_add)) { dialog, _ ->
-                config.updateJSON { json ->
-                    json.getJSONArray("Peers").put(input.text.toString().trim())
+            val dialog = MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.peers_add_peer))
+                .setView(view)
+                .setPositiveButton(getString(R.string.peers_add)) { dialog, _ ->
+                    config.updateJSON { json ->
+                        json.getJSONArray("Peers").put(input.text.toString().trim())
+                    }
+                    dialog.dismiss()
+                    updateConfiguredPeers()
                 }
-                dialog.dismiss()
-                updateConfiguredPeers()
-            }
-            builder.setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.cancel()
-            }
-            val dialog = builder.create()
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.cancel()
+                }
+                .create()
             dialog.show()
             val addButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             addButton.isEnabled = false
@@ -130,6 +137,25 @@ class PeersActivity : AppCompatActivity() {
                 inputLayout?.error = error
                 addButton.isEnabled = error == null && !text.isNullOrBlank()
             }
+        }
+
+        // Browse public peers button
+        findViewById<View>(R.id.browsePublicPeersButton).setOnClickListener {
+            startActivity(Intent(this, PublicPeersActivity::class.java))
+        }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        val prefs = newBase.getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val lang = prefs.getString("app_language", "")
+        if (!lang.isNullOrEmpty()) {
+            val locale = Locale(lang)
+            Locale.setDefault(locale)
+            val config = Configuration(newBase.resources.configuration)
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
         }
     }
 
@@ -170,19 +196,19 @@ class PeersActivity : AppCompatActivity() {
                     view.findViewById<ImageButton>(R.id.deletePeerButton).tag = i
 
                     view.findViewById<ImageButton>(R.id.deletePeerButton).setOnClickListener { button ->
-                        val builder: AlertDialog.Builder = AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
-                        builder.setTitle(getString(R.string.peers_remove_title, peer))
-                        builder.setPositiveButton(getString(R.string.peers_remove)) { dialog, _ ->
-                            config.updateJSON { json ->
-                                json.getJSONArray("Peers").remove(button.tag as Int)
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle(getString(R.string.peers_remove_title, peer))
+                            .setPositiveButton(getString(R.string.peers_remove)) { dialog, _ ->
+                                config.updateJSON { json ->
+                                    json.getJSONArray("Peers").remove(button.tag as Int)
+                                }
+                                dialog.dismiss()
+                                updateConfiguredPeers()
                             }
-                            dialog.dismiss()
-                            updateConfiguredPeers()
-                        }
-                        builder.setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                            dialog.cancel()
-                        }
-                        builder.show()
+                            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                                dialog.cancel()
+                            }
+                            .show()
                     }
                     configuredTableLayout.addView(view)
                 }
@@ -202,7 +228,6 @@ class PeersActivity : AppCompatActivity() {
                 for (peer in peers) {
                     val view = inflater.inflate(R.layout.peers_connected, null)
                     val ip = peer.getString("IP")
-                    // Only connected peers have IPs
                     if (ip.isNotEmpty()) {
                         view.findViewById<TextView>(R.id.addressLabel).text = ip
                         view.findViewById<TextView>(R.id.detailsLabel).text = peer.getString("URI")
@@ -251,7 +276,6 @@ class PeersActivity : AppCompatActivity() {
                 "state" -> {
                     if (intent.hasExtra("peers")) {
                         val peers1 = intent.getStringExtra("peers")
-                        //Log.i("PeersActivity", "Peers json: $peers1")
                         val peersArray = JSONArray(peers1 ?: "[]")
                         val array = Array(peersArray.length()) { i ->
                             peersArray.getJSONObject(i)

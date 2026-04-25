@@ -81,7 +81,6 @@ fun migrateDnsServers(context: Context) {
     }
     val serverString = preferences.getString(KEY_DNS_SERVERS, "")
     if (serverString!!.isNotEmpty()) {
-        // Replacing old Revertron's servers by new ones
         val newServers = serverString
             .replace("300:6223::53", "308:25:40:bd::")
             .replace("302:7991::53", "308:62:45:62::")
@@ -99,29 +98,56 @@ fun migrateDnsServers(context: Context) {
 fun createServiceNotification(context: Context, state: State): Notification {
     createNotificationChannels(context)
 
-    val intent = Intent(context, MainActivity::class.java).apply {
+    // Intent to open the app
+    val openIntent = Intent(context, MainActivity::class.java).apply {
         this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
     var flags = PendingIntent.FLAG_UPDATE_CURRENT
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     }
-    val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, flags)
+    val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, openIntent, flags)
 
-    val text = when (state) {
+    // Disconnect action intent
+    val disconnectIntent = Intent(context, PacketTunnelProvider::class.java).apply {
+        action = PacketTunnelProvider.ACTION_STOP
+    }
+    val disconnectFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    } else {
+        PendingIntent.FLAG_UPDATE_CURRENT
+    }
+    val disconnectPendingIntent: PendingIntent = PendingIntent.getService(
+        context, 1, disconnectIntent, disconnectFlags
+    )
+
+    val title = when (state) {
         State.Disabled -> context.getText(R.string.tile_disabled)
-        State.Enabled -> context.getText(R.string.tile_enabled)
-        State.Connected -> context.getText(R.string.tile_connected)
+        State.Enabled -> context.getText(R.string.notification_connecting)
+        State.Connected -> context.getText(R.string.notification_connected)
         else -> context.getText(R.string.tile_disabled)
     }
 
-    return NotificationCompat.Builder(context, MAIN_CHANNEL_ID)
+    val builder = NotificationCompat.Builder(context, MAIN_CHANNEL_ID)
         .setShowWhen(false)
-        .setContentTitle(text)
+        .setContentTitle(title)
         .setSmallIcon(R.drawable.ic_tile_icon)
         .setContentIntent(pendingIntent)
-        .setPriority(NotificationCompat.PRIORITY_MIN)
-        .build()
+        .setOngoing(true)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+
+    // Add disconnect action button when VPN is active
+    if (state == State.Enabled || state == State.Connected) {
+        builder.addAction(
+            NotificationCompat.Action.Builder(
+                R.drawable.ic_stop,
+                context.getString(R.string.notification_disconnect),
+                disconnectPendingIntent
+            ).build()
+        )
+    }
+
+    return builder.build()
 }
 
 fun createPermissionMissingNotification(context: Context): Notification {
@@ -147,16 +173,13 @@ fun createPermissionMissingNotification(context: Context): Notification {
 }
 
 private fun createNotificationChannels(context: Context) {
-    // Create the NotificationChannel, but only on API 26+ because
-    // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val name = context.getString(R.string.channel_name)
         val descriptionText = context.getString(R.string.channel_description)
-        val importance = NotificationManager.IMPORTANCE_MIN
+        val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(MAIN_CHANNEL_ID, name, importance).apply {
             description = descriptionText
         }
-        // Register the channel with the system
         val notificationManager: NotificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)

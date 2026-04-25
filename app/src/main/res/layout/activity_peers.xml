@@ -1,290 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".PeersActivity">
+    android:fitsSystemWindows="true">
 
-    <FrameLayout
-        android:id="@+id/settings"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/peersToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/peers_title"
+            app:navigationIcon="@drawable/ic_baseline_arrow_back_24"
+            app:titleTextColor="?attr/colorOnSurface" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:dividerPadding="4pt"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <LinearLayout
+            <!-- Browse Public Peers Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/browsePublicPeersButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_marginBottom="12dp"
+                android:text="@string/public_peers_browse"
+                app:icon="@drawable/ic_public"
+                app:iconGravity="start"
+                style="@style/Widget.Material3.Button.TonalButton" />
 
-                <TextView
-                    android:id="@+id/pageTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8pt"
-                    android:text="@string/main_peers"
-                    android:textColor="?attr/textDefault"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
-
-                <Space
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-                <ImageButton
-                    android:id="@+id/addPeerButton"
-                    android:layout_width="16pt"
-                    android:layout_height="16pt"
-                    android:layout_marginTop="6pt"
-                    android:layout_marginRight="8pt"
-                    android:background="@android:color/transparent"
-                    app:srcCompat="@drawable/ic_baseline_add_circle_24" />
-            </LinearLayout>
-
-            <ScrollView
+            <!-- Connected Peers Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" >
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/connectedPeersLabel"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:text="@string/peers_connected_title"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:text="@string/peers_no_connected_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="8dp" />
 
                     <TableLayout
                         android:id="@+id/connectedPeersTableLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle" />
+                        android:visibility="gone" />
 
-                    <TextView
-                        android:id="@+id/configuredPeersLabel"
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Configured Peers Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/peers_configured_title"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
-                    <TableLayout
-                        android:id="@+id/configuredPeersTableLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle" />
+                        <TextView
+                            android:id="@+id/configuredPeersLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/peers_no_configured_title"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="?attr/colorPrimary" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="4pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/configured_peers_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        <ImageButton
+                            android:id="@+id/addPeerButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_baseline_add_24"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/peers_add_peer"
+                            app:tint="?attr/colorPrimary" />
+
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/peers_discovery_link"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="4pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/peers_discovery_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="32px" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/peer_connectivity_title"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:text="@string/peers_discovery_link"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="8dp"
+                        android:visibility="gone" />
 
                     <TableLayout
-                        android:id="@+id/configurationTableLayout"
+                        android:id="@+id/configuredPeersTableLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
+                        android:visibility="gone" />
 
-                        <TableRow
-                            android:id="@+id/enableMulticastBeaconPanel"
-                            style="@style/SelectableSwitchItemStyle">
+                </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/discoverable_over_multicast"
-                                android:textColor="?attr/textDefault" />
+            </com.google.android.material.card.MaterialCardView>
 
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
+            <!-- Multicast Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
 
-                            <Switch
-                                android:id="@+id/enableMulticastBeacon"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                        </TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/multicast_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="12dp" />
 
-                        <TableRow
-                            android:id="@+id/enableMulticastListenPanel"
-                            style="@style/SelectableSwitchItemStyle">
+                    <TableRow
+                        android:id="@+id/enableMulticastBeaconPanel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/search_for_multicast_peers"
-                                android:textColor="?attr/textDefault" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/discoverable_over_multicast"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
 
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/enableMulticastBeacon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
 
-                            <Switch
-                                android:id="@+id/enableMulticastListen"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
+                    </TableRow>
 
-                        </TableRow>
+                    <TableRow
+                        android:id="@+id/enableMulticastListenPanel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
 
-                        <TableRow
-                            android:id="@+id/passwordTableRow"
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/search_for_multicast_peers"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/enableMulticastListen"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                    </TableRow>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TableRow
+                        android:id="@+id/passwordTableRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp">
+
+                        <com.google.android.material.textfield.TextInputLayout
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:clickable="true"
-                            android:paddingStart="4pt"
-                            android:paddingTop="4pt"
-                            android:paddingEnd="4pt"
-                            android:paddingBottom="4pt">
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:hint="@string/peers_multicast_password_hint">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/peers_multicast_password_hint"
-                                android:textColor="?attr/textDefault" />
-
-                            <EditText
+                            <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/passwordEdit"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:background="@null"
-                                android:ems="10"
-                                android:hint="@string/tap_to_edit"
                                 android:inputType="textVisiblePassword"
-                                android:padding="0pt"
-                                android:textAlignment="textEnd"
                                 android:textSize="14sp" />
 
-                        </TableRow>
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                    </TableLayout>
+                    </TableRow>
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginBottom="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
                         android:text="@string/peer_connectivity_hint"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginTop="8dp" />
+
                 </LinearLayout>
-            </ScrollView>
+
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </FrameLayout>
-</LinearLayout>
+
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

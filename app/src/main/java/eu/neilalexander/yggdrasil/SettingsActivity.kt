@@ -8,22 +8,25 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.ContextThemeWrapper
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.*
-import androidx.appcompat.widget.LinearLayoutCompat
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
 import androidx.core.widget.doOnTextChanged
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.json.JSONObject
+import java.util.Locale
 import java.util.concurrent.Executors
 
 class SettingsActivity : AppCompatActivity() {
@@ -31,16 +34,17 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var inflater: LayoutInflater
 
     private lateinit var deviceNameEntry: EditText
-    private lateinit var exitModeSwitch: Switch
+    private lateinit var exitModeSwitch: MaterialSwitch
     private lateinit var exitRemoteAddrEntry: EditText
     private lateinit var exitRemotePortEntry: EditText
     private lateinit var exitLocalPortEntry: EditText
     private lateinit var exitDnsServer1Entry: EditText
     private lateinit var exitDnsServer2Entry: EditText
-    private lateinit var exitExcludedAppsButton: Button
+    private lateinit var exitExcludedAppsButton: View
     private lateinit var exitExcludedAppsSummary: TextView
     private lateinit var publicKeyLabel: TextView
-    private lateinit var resetConfigurationRow: LinearLayoutCompat
+    private lateinit var resetConfigurationRow: View
+    private lateinit var dnsValue: TextView
     private lateinit var appSettings: SharedPreferences
     private lateinit var excludedAppsRepository: ExcludedAppsRepository
     private var publicKeyReset = false
@@ -58,6 +62,10 @@ class SettingsActivity : AppCompatActivity() {
         excludedAppsRepository = ExcludedAppsRepository(packageManager)
         inflater = LayoutInflater.from(this)
 
+        // Toolbar
+        val toolbar = findViewById<MaterialToolbar>(R.id.settingsToolbar)
+        toolbar.setNavigationOnClickListener { finish() }
+
         deviceNameEntry = findViewById(R.id.deviceNameEntry)
         exitModeSwitch = findViewById(R.id.exitModeSwitch)
         exitRemoteAddrEntry = findViewById(R.id.exitRemoteAddrEntry)
@@ -69,6 +77,7 @@ class SettingsActivity : AppCompatActivity() {
         exitExcludedAppsSummary = findViewById(R.id.exitExcludedAppsSummary)
         publicKeyLabel = findViewById(R.id.publicKeyLabel)
         resetConfigurationRow = findViewById(R.id.resetConfigurationRow)
+        dnsValue = findViewById(R.id.dnsValue)
 
         deviceNameEntry.doOnTextChanged { text, _, _, _ ->
             config.updateJSON { cfg ->
@@ -113,34 +122,25 @@ class SettingsActivity : AppCompatActivity() {
             showExcludedAppsDialog()
         }
 
-        findViewById<View>(R.id.deviceNameTableRow).setOnKeyListener { view, keyCode, event ->
-            Log.i("Key", keyCode.toString())
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                    deviceNameEntry.requestFocus()
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
+        // DNS row
+        findViewById<View>(R.id.dnsRow).setOnClickListener {
+            startActivity(Intent(this, DnsActivity::class.java))
         }
 
         resetConfigurationRow.setOnClickListener {
             val view = inflater.inflate(R.layout.dialog_resetconfig, null)
-            val builder: AlertDialog.Builder = AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
-            builder.setTitle(getString(R.string.settings_warning_title))
-            builder.setView(view)
-            builder.setPositiveButton(getString(R.string.settings_reset)) { dialog, _ ->
-                config.resetJSON()
-                updateView()
-                dialog.dismiss()
-            }
-            builder.setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.cancel()
-            }
-            builder.show()
+            MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.settings_warning_title))
+                .setView(view)
+                .setPositiveButton(getString(R.string.settings_reset)) { dialog, _ ->
+                    config.resetJSON()
+                    updateView()
+                    dialog.dismiss()
+                }
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.cancel()
+                }
+                .show()
         }
 
         findViewById<View>(R.id.resetKeysRow).setOnClickListener {
@@ -151,31 +151,76 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.setKeysRow).setOnClickListener {
             val view = inflater.inflate(R.layout.dialog_set_keys, null)
-            val builder: AlertDialog.Builder = AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
             val privateKey = view.findViewById<EditText>(R.id.private_key)
-            builder.setTitle(getString(R.string.set_keys))
-            builder.setView(view)
-            builder.setPositiveButton(getString(R.string.save)) { dialog, _ ->
-                config.setKeys(privateKey.text.toString())
-                updateView()
-                dialog.dismiss()
-            }
-            builder.setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.cancel()
-            }
-            builder.show()
+            MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.set_keys))
+                .setView(view)
+                .setPositiveButton(getString(R.string.save)) { dialog, _ ->
+                    config.setKeys(privateKey.text.toString())
+                    updateView()
+                    dialog.dismiss()
+                }
+                .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                    dialog.cancel()
+                }
+                .show()
         }
 
         publicKeyLabel.setOnLongClickListener {
             val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("public key", publicKeyLabel.text)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(applicationContext,R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
             true
+        }
+
+        // Language switcher
+        val languageRadioGroup = findViewById<RadioGroup>(R.id.languageRadioGroup)
+        val savedLang = appSettings.getString("app_language", "")
+        when (savedLang) {
+            "ru" -> languageRadioGroup.check(R.id.radioRussian)
+            "en" -> languageRadioGroup.check(R.id.radioEnglish)
+            else -> {
+                val currentLang = resources.configuration.locales[0].language
+                if (currentLang == "ru") languageRadioGroup.check(R.id.radioRussian)
+                else languageRadioGroup.check(R.id.radioEnglish)
+            }
+        }
+        languageRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val lang = when (checkedId) {
+                R.id.radioRussian -> "ru"
+                else -> "en"
+            }
+            appSettings.edit().putString("app_language", lang).apply()
+            setAppLocale(lang)
+            recreate()
         }
 
         updateView()
         loadLauncherApps(filterSystemApps = true)
+    }
+
+    private fun setAppLocale(languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+        val config = Configuration(resources.configuration)
+        config.setLocale(locale)
+        @Suppress("DEPRECATION")
+        resources.updateConfiguration(config, resources.displayMetrics)
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        val prefs = newBase.getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val lang = prefs.getString("app_language", "")
+        if (!lang.isNullOrEmpty()) {
+            val locale = Locale(lang)
+            Locale.setDefault(locale)
+            val config = Configuration(newBase.resources.configuration)
+            config.setLocale(locale)
+            super.attachBaseContext(newBase.createConfigurationContext(config))
+        } else {
+            super.attachBaseContext(newBase)
+        }
     }
 
     private fun updateView() {
@@ -205,6 +250,20 @@ class SettingsActivity : AppCompatActivity() {
         exitDnsServer1Entry.setText(dnsServers.getOrNull(0).orEmpty(), TextView.BufferType.EDITABLE)
         exitDnsServer2Entry.setText(dnsServers.getOrNull(1).orEmpty(), TextView.BufferType.EDITABLE)
         updateExcludedAppsSummary()
+
+        // Update DNS value
+        val preferences = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this.baseContext)
+        val serverString = preferences.getString(KEY_DNS_SERVERS, "")
+        if (serverString!!.isNotEmpty()) {
+            val servers = serverString.split(",")
+            dnsValue.text = when (servers.size) {
+                0 -> getString(R.string.dns_no_servers)
+                1 -> getString(R.string.dns_one_server)
+                else -> getString(R.string.dns_many_servers, servers.size)
+            }
+        } else {
+            dnsValue.text = getString(R.string.dns_no_servers)
+        }
     }
 
     private fun getExcludedPackagesFromSettings(): MutableSet<String> {
@@ -238,7 +297,7 @@ class SettingsActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
         }
 
-        AlertDialog.Builder(ContextThemeWrapper(this, R.style.YggdrasilDialogs))
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.exit_vpn_excluded_apps))
             .setView(listView)
             .setPositiveButton(getString(R.string.save)) { dialog, _ ->
@@ -323,7 +382,6 @@ class SettingsActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
     }
 
-    // To be able to get public key from running Yggdrasil we use this receiver, as we don't have this field in config
     private val receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent) {
             if (intent.hasExtra("pubkey") && !publicKeyReset) {

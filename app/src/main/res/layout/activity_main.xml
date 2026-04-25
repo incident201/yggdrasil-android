@@ -1,403 +1,285 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:fitsSystemWindows="true">
 
-    <FrameLayout
-        android:id="@+id/settings"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/app_name"
+            app:titleTextColor="?attr/colorOnSurface"
+            app:navigationIcon="@drawable/ic_shield" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:dividerPadding="4pt"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="16dp">
 
+            <!-- Status text -->
             <TextView
-                android:id="@+id/pageTitle"
+                android:id="@+id/statusText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="8pt"
-                android:text="@string/app_name"
-                android:textColor="?attr/textDefault"
-                android:textSize="24sp"
+                android:layout_marginTop="24dp"
+                android:text="@string/status_disconnected"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textStyle="bold" />
 
-            <ScrollView
+            <!-- VPN Connect Button -->
+            <FrameLayout
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:layout_gravity="center_horizontal">
+
+                <!-- Outer ring -->
+                <View
+                    android:id="@+id/vpnButtonRing"
+                    android:layout_width="180dp"
+                    android:layout_height="180dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/vpn_button_ring" />
+
+                <!-- Inner button -->
+                <ImageButton
+                    android:id="@+id/vpnButton"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/vpn_button_background"
+                    android:src="@drawable/ic_power"
+                    android:scaleType="center"
+                    android:contentDescription="@string/connect_button_desc"
+                    android:elevation="8dp" />
+
+            </FrameLayout>
+
+            <!-- Connection mode label -->
+            <TextView
+                android:id="@+id/connectionModeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/mode_exit_vpn"
+                android:textSize="13sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="24dp" />
+
+            <!-- IP Address Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/ipCard"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical" >
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:id="@+id/statusSectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/your_ip_address"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:text="@string/main_status"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="4dp">
 
-                    <androidx.appcompat.widget.LinearLayoutCompat
-                        android:id="@+id/connectedPeersTableLayout"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/ipAddressText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/not_connected"
+                            android:textSize="15sp"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textIsSelectable="true"
+                            android:fontFamily="monospace" />
+
+                        <ImageButton
+                            android:id="@+id/copyIpButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/ic_copy"
+                            android:contentDescription="@string/copy_ip"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                    <!-- Subnet -->
+                    <TextView
+                        android:id="@+id/subnetLabel"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/enableYggdrasilPanel"
-                            style="@style/SelectableSwitchItemStyle">
-
-                            <TextView
-                                android:id="@+id/enableYggdrasilLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/main_enable_yggdrasil"
-                                android:textColor="?attr/textDefault"
-                                android:textSize="14sp" />
-
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
-
-                            <Switch
-                                android:id="@+id/enableYggdrasil"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
-
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/yggdrasilStatusLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:paddingTop="2dp"
-                                android:paddingBottom="2dp"
-                                android:text="@string/main_disabled"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="32px" />
+                        android:layout_marginTop="8dp"
+                        android:text="@string/your_subnet"
+                        android:textSize="12sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone" />
 
                     <TextView
-                        android:id="@+id/networkInfoSectionLabel"
+                        android:id="@+id/subnetText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/main_network_info"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <androidx.appcompat.widget.LinearLayoutCompat
-                        android:id="@+id/configuredPeersTableLayout"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <androidx.appcompat.widget.LinearLayoutCompat style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/ipAddressLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0"
-                                android:text="@string/main_ip"
-                                android:textColor="?attr/textDefault" />
-
-                            <TextView
-                                android:id="@+id/ipAddressValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:alpha="0.5"
-                                android:ellipsize="none"
-                                android:scrollHorizontally="true"
-                                android:selectAllOnFocus="true"
-                                android:singleLine="true"
-                                android:text="@string/main_not_available"
-                                android:textAlignment="viewEnd"
-                                android:textIsSelectable="true"
-                                android:textSize="14sp" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/subnetLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0"
-                                android:text="@string/main_subnet"
-                                android:textColor="?attr/textDefault" />
-
-                            <TextView
-                                android:id="@+id/subnetValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:alpha="0.5"
-                                android:ellipsize="none"
-                                android:scrollHorizontally="true"
-                                android:selectAllOnFocus="true"
-                                android:singleLine="true"
-                                android:text="@string/main_not_available"
-                                android:textAlignment="viewEnd"
-                                android:textIsSelectable="true"
-                                android:textSize="14sp" />
-
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="32px" />
-
-                    <TextView
-                        android:id="@+id/configurationSectionLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:layout_marginBottom="2pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/main_configuration"
-                        android:textAllCaps="true"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
-
-                    <androidx.appcompat.widget.LinearLayoutCompat
-                        android:id="@+id/configurationTableLayout"
-                        android:orientation="vertical"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8pt"
-                        android:layout_marginLeft="8pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:background="@drawable/rounded"
-                        android:divider="#46878787"
-                        android:dividerPadding="4pt"
-                        android:paddingLeft="4pt"
-                        android:paddingTop="2pt"
-                        android:paddingRight="4pt"
-                        android:paddingBottom="2pt"
-                        android:showDividers="middle">
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/peersTableRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/multicastLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/main_peers"
-                                android:textColor="?attr/textDefault" />
-
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
-
-                            <TextView
-                                android:id="@+id/peersValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:alpha="0.5"
-                                android:text="@string/main_no_peers"
-                                android:textAlignment="textEnd" />
-
-                            <ImageView
-                                android:id="@+id/peersChevron"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:layout_marginLeft="2pt"
-                                android:alpha="0.4"
-                                android:cropToPadding="false"
-                                android:scaleType="fitEnd"
-                                android:scaleX="1.2"
-                                android:scaleY="1.2"
-                                app:srcCompat="@drawable/ic_baseline_chevron_right_24" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/dnsTableRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/dnsLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/main_dns_servers"
-                                android:textColor="?attr/textDefault" />
-
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
-
-                            <TextView
-                                android:id="@+id/dnsValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:alpha="0.5"
-                                android:text="@string/dns_no_servers"
-                                android:textAlignment="textEnd" />
-
-                            <ImageView
-                                android:id="@+id/dnsChevron"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:layout_marginLeft="2pt"
-                                android:alpha="0.4"
-                                android:cropToPadding="false"
-                                android:scaleType="fitEnd"
-                                android:scaleX="1.2"
-                                android:scaleY="1.2"
-                                app:srcCompat="@drawable/ic_baseline_chevron_right_24" />
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/settingsTableRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/settingsLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/main_settings"
-                                android:textColor="?attr/textDefault" />
-
-                            <Space
-                                android:layout_width="320dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="2" />
-
-                            <TextView
-                                android:id="@+id/textView"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content" />
-
-                            <ImageView
-                                android:id="@+id/settingsChevron"
-                                android:layout_width="wrap_content"
-                                android:layout_height="match_parent"
-                                android:layout_marginLeft="2pt"
-                                android:alpha="0.4"
-                                android:scaleType="fitEnd"
-                                android:scaleX="1.2"
-                                android:scaleY="1.2"
-                                app:srcCompat="@drawable/ic_baseline_chevron_right_24" />
-
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                        <androidx.appcompat.widget.LinearLayoutCompat
-                            android:id="@+id/versionTableRow"
-                            style="@style/SelectableItemStyle">
-
-                            <TextView
-                                android:id="@+id/versionLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/main_version"
-                                android:textColor="?attr/textDefault" />
-
-                            <Space
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="2" />
-
-                            <TextView
-                                android:id="@+id/versionValue"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:alpha="0.5"
-                                android:text="@string/main_unknown"
-                                android:textAlignment="textEnd" />
-
-                        </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    </androidx.appcompat.widget.LinearLayoutCompat>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16pt"
-                        android:layout_marginLeft="16pt"
-                        android:layout_marginTop="4pt"
-                        android:layout_marginBottom="4pt"
-                        android:layout_marginEnd="8pt"
-                        android:layout_marginRight="8pt"
-                        android:alpha="0.7"
-                        android:paddingRight="8pt"
-                        android:text="@string/main_bottom_warning"
-                        android:textAllCaps="false"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                        android:textSize="12sp" />
+                        android:layout_marginTop="4dp"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textIsSelectable="true"
+                        android:fontFamily="monospace"
+                        android:visibility="gone" />
 
                 </LinearLayout>
-            </ScrollView>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Quick Actions -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="4dp">
+
+                    <!-- Peers -->
+                    <LinearLayout
+                        android:id="@+id/peersRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_peers"
+                            android:layout_marginEnd="16dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/peers_title"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/peersCountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:layout_marginEnd="8dp" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_baseline_chevron_right_24" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="56dp"
+                        android:background="?attr/colorSurfaceVariant" />
+
+                    <!-- Settings -->
+                    <LinearLayout
+                        android:id="@+id/settingsRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_settings"
+                            android:layout_marginEnd="16dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/settings_title"
+                            android:textSize="16sp"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_baseline_chevron_right_24" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Version info -->
+            <TextView
+                android:id="@+id/versionText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOutline" />
 
         </LinearLayout>
-    </FrameLayout>
-</LinearLayout>
+
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
