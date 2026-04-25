@@ -124,10 +124,16 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/not_connected"
-                            android:textSize="15sp"
                             android:textColor="?attr/colorOnSurface"
                             android:textIsSelectable="true"
-                            android:fontFamily="monospace" />
+                            android:fontFamily="monospace"
+                            android:singleLine="true"
+                            android:ellipsize="none"
+                            android:scrollHorizontally="true"
+                            app:autoSizeTextType="uniform"
+                            app:autoSizeMinTextSize="10sp"
+                            app:autoSizeMaxTextSize="15sp"
+                            app:autoSizeStepGranularity="1sp" />
 
                         <ImageButton
                             android:id="@+id/copyIpButton"

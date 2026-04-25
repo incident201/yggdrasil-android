@@ -74,5 +74,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="hintlight">#F2F1F5</color>
     <color name="hintdark">#1C1C1E</color>
-    <color name="ic_launcher_background">#1B5E20</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>
