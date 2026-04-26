@@ -118,7 +118,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         addExitConfigButton.setOnClickListener { addExitConfig() }
-        deleteExitConfigButton.setOnClickListener { deleteActiveConfig() }
+        deleteExitConfigButton.setOnClickListener { confirmDeleteActiveConfig() }
 
         val saveActiveConfigFromFields = fun() {
             if (isUpdatingConfigFields) {
@@ -139,7 +139,6 @@ class SettingsActivity : AppCompatActivity() {
             exitConfigs[index] = updated
             ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
             refreshExitConfigSpinner()
-            updateExcludedAppsSummary()
         }
 
         exitConfigNameEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
@@ -228,19 +227,56 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun addExitConfig() {
-        val created = ExitVpnConfigStore.defaultConfig(exitConfigs.size + 1)
-        exitConfigs.add(created)
-        activeConfigId = created.id
-        ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
-        refreshExitConfigSpinner()
-        bindActiveConfigToFields()
+        val input = com.google.android.material.textfield.TextInputEditText(this).apply {
+            setText(getString(R.string.exit_vpn_new_server_default_name, exitConfigs.size + 1))
+            setSelection(text?.length ?: 0)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
+            hint = getString(R.string.exit_vpn_config_name)
+            addView(input)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.exit_vpn_config_add)
+            .setView(inputLayout)
+            .setPositiveButton(R.string.add) { dialog, _ ->
+                val created = ExitVpnConfigStore.defaultConfig(exitConfigs.size + 1).copy(
+                    displayName = input.text?.toString()?.trim().orEmpty()
+                )
+                exitConfigs.add(created)
+                activeConfigId = created.id
+                ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+                refreshExitConfigSpinner()
+                bindActiveConfigToFields()
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+            .show()
     }
 
-    private fun deleteActiveConfig() {
+    private fun confirmDeleteActiveConfig() {
         if (exitConfigs.size <= 1) {
             Toast.makeText(this, R.string.exit_vpn_config_delete_last_error, Toast.LENGTH_SHORT).show()
             return
         }
+        val activeConfig = exitConfigs.firstOrNull { it.id == activeConfigId } ?: return
+        val title = getString(
+            R.string.exit_vpn_config_delete_confirm_title,
+            activeConfig.displayName.ifBlank { getString(R.string.exit_vpn_unnamed_config) }
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(R.string.exit_vpn_config_delete_confirm_message)
+            .setPositiveButton(R.string.remove) { dialog, _ ->
+                deleteActiveConfig()
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.cancel() }
+            .show()
+    }
+
+    private fun deleteActiveConfig() {
         val index = exitConfigs.indexOfFirst { it.id == activeConfigId }
         if (index < 0) return
         exitConfigs.removeAt(index)
@@ -260,7 +296,6 @@ class SettingsActivity : AppCompatActivity() {
         exitDnsServer1Entry.setText(activeConfig.dnsServer1, TextView.BufferType.EDITABLE)
         exitDnsServer2Entry.setText(activeConfig.dnsServer2, TextView.BufferType.EDITABLE)
         isUpdatingConfigFields = false
-        updateExcludedAppsSummary()
     }
 
     private fun refreshExitConfigSpinner() {
@@ -338,9 +373,8 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun getActiveExcludedPackagesFromSettings(): MutableSet<String> {
-        val activeConfig = exitConfigs.firstOrNull { it.id == activeConfigId }
-        return activeConfig?.excludedApps
+    private fun getGlobalExcludedPackagesFromSettings(): MutableSet<String> {
+        return appSettings.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
             .orEmpty()
             .split(",")
             .map { it.trim() }
@@ -354,7 +388,7 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
 
-        val selectedPackages = getActiveExcludedPackagesFromSettings()
+        val selectedPackages = getGlobalExcludedPackagesFromSettings()
         val listView = ListView(this)
         val adapter = ExcludedAppsAdapter(selectedPackages)
         listView.adapter = adapter
@@ -374,11 +408,7 @@ class SettingsActivity : AppCompatActivity() {
             .setView(listView)
             .setPositiveButton(getString(R.string.save)) { dialog, _ ->
                 val value = selectedPackages.sortedWith(String.CASE_INSENSITIVE_ORDER).joinToString(",")
-                val index = exitConfigs.indexOfFirst { it.id == activeConfigId }
-                if (index >= 0) {
-                    exitConfigs[index] = exitConfigs[index].copy(excludedApps = value)
-                    ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
-                }
+                appSettings.edit().putString(PREF_KEY_EXIT_EXCLUDED_APPS, value).apply()
                 updateExcludedAppsSummary()
                 dialog.dismiss()
             }
@@ -389,7 +419,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateExcludedAppsSummary() {
-        val selectedPackages = getActiveExcludedPackagesFromSettings()
+        val selectedPackages = getGlobalExcludedPackagesFromSettings()
         if (selectedPackages.isEmpty()) {
             exitExcludedAppsSummary.text = getString(R.string.exit_vpn_excluded_apps_none)
             return
