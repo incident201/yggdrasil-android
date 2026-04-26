@@ -136,6 +136,12 @@
     <string name="exit_vpn_server_desc">Server address and ports for the Exit VPN tunnel</string>
     <string name="exit_vpn_dns_desc">DNS servers used when Exit VPN is active</string>
     <string name="exit_vpn_excluded_desc">Apps that bypass the VPN tunnel</string>
+    <string name="exit_vpn_profiles">Saved servers</string>
+    <string name="exit_vpn_config_name">Display name</string>
+    <string name="exit_vpn_config_add">Add server</string>
+    <string name="exit_vpn_config_delete">Delete server</string>
+    <string name="exit_vpn_unnamed_config">Unnamed server</string>
+    <string name="exit_vpn_config_delete_last_error">At least one server must remain</string>
 
     <!-- Tile -->
     <string name="tile_disabled">Disabled</string>

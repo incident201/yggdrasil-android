@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -14,7 +14,7 @@ const val STATE_RECONNECTING = "reconnecting"
 class YggStateReceiver(var receiver: StateReceiver): BroadcastReceiver() {
 
     companion object {
-        const val YGG_STATE_INTENT = "eu.neilalexander.yggdrasil.YggStateReceiver.STATE"
+        const val YGG_STATE_INTENT = "io.yggdrasilvpn.YggStateReceiver.STATE"
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {

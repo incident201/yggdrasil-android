@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.content.Intent
 import android.content.SharedPreferences
@@ -10,7 +10,7 @@ import android.system.OsConstants
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
-import eu.neilalexander.yggdrasil.YggStateReceiver.Companion.YGG_STATE_INTENT
+import io.yggdrasilvpn.YggStateReceiver.Companion.YGG_STATE_INTENT
 import mobile.Yggdrasil
 import org.json.JSONArray
 import java.io.FileInputStream
@@ -24,12 +24,12 @@ const val SERVICE_NOTIFICATION_ID = 1000
 
 open class PacketTunnelProvider: VpnService() {
     companion object {
-        const val STATE_INTENT = "eu.neilalexander.yggdrasil.PacketTunnelProvider.STATE_MESSAGE"
+        const val STATE_INTENT = "io.yggdrasilvpn.PacketTunnelProvider.STATE_MESSAGE"
 
-        const val ACTION_START = "eu.neilalexander.yggdrasil.PacketTunnelProvider.START"
-        const val ACTION_STOP = "eu.neilalexander.yggdrasil.PacketTunnelProvider.STOP"
-        const val ACTION_TOGGLE = "eu.neilalexander.yggdrasil.PacketTunnelProvider.TOGGLE"
-        const val ACTION_CONNECT = "eu.neilalexander.yggdrasil.PacketTunnelProvider.CONNECT"
+        const val ACTION_START = "io.yggdrasilvpn.PacketTunnelProvider.START"
+        const val ACTION_STOP = "io.yggdrasilvpn.PacketTunnelProvider.STOP"
+        const val ACTION_TOGGLE = "io.yggdrasilvpn.PacketTunnelProvider.TOGGLE"
+        const val ACTION_CONNECT = "io.yggdrasilvpn.PacketTunnelProvider.CONNECT"
     }
 
     private var yggdrasil = Yggdrasil()
@@ -453,9 +453,10 @@ open class PacketTunnelProvider: VpnService() {
     }
 
     private fun startExitMode(preferences: SharedPreferences): ParcelFileDescriptor? {
-        val remoteAddr = preferences.getString(PREF_KEY_EXIT_REMOTE_ADDR, "")?.trim().orEmpty()
-        val remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "")?.trim().orEmpty().toLongOrNull()
-        val localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "")?.trim().orEmpty().toLongOrNull()
+        val activeConfig = ExitVpnConfigStore.getActive(preferences)
+        val remoteAddr = activeConfig.remoteAddr.trim()
+        val remotePort = activeConfig.remotePort.trim().toLongOrNull()
+        val localPort = activeConfig.localPort.trim().toLongOrNull()
         if (remoteAddr.isEmpty() || remotePort == null || localPort == null) {
             Log.e(TAG, "Exit mode is enabled but remote address/ports are not configured")
             return null
@@ -479,12 +480,10 @@ open class PacketTunnelProvider: VpnService() {
             builder.setMetered(false)
         }
 
-        val dnsServers = preferences.getString(PREF_KEY_EXIT_DNS_SERVERS, "")?.trim().orEmpty()
-        val servers = if (dnsServers.isNotEmpty()) {
-            dnsServers.split(",")
-        } else {
-            listOf("1.1.1.1")
-        }
+        val dnsServers = listOf(activeConfig.dnsServer1, activeConfig.dnsServer2)
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+        val servers = if (dnsServers.isNotEmpty()) dnsServers else listOf("1.1.1.1")
         servers.forEach {
             val dnsServer = it.trim()
             if (dnsServer.isNotEmpty()) {
@@ -499,8 +498,8 @@ open class PacketTunnelProvider: VpnService() {
             Log.w(TAG, "Failed to self-exclude app", e)
         }
 
-        preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
-            ?.split(",")
+        activeConfig.excludedApps
+            .split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() && it != applicationContext.packageName }
             ?.forEach { packageName ->

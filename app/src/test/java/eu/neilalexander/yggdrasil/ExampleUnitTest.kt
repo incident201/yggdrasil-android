@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import org.junit.Test
 

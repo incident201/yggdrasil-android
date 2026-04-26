@@ -1,14 +1,18 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.app.*
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.service.quicksettings.TileService
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.UUID
 
 const val PREF_KEY_ENABLED = "enabled"
 const val PREF_KEY_PEERS_NOTE = "peers_note"
@@ -19,7 +23,112 @@ const val PREF_KEY_EXIT_REMOTE_PORT = "exit_remote_port"
 const val PREF_KEY_EXIT_LOCAL_PORT = "exit_local_port"
 const val PREF_KEY_EXIT_DNS_SERVERS = "exit_dns_servers"
 const val PREF_KEY_EXIT_EXCLUDED_APPS = "exit_excluded_apps"
+const val PREF_KEY_EXIT_CONFIGS = "exit_configs"
+const val PREF_KEY_EXIT_ACTIVE_CONFIG_ID = "exit_active_config_id"
 const val MAIN_CHANNEL_ID = "Yggdrasil Service"
+
+data class ExitVpnConfig(
+    val id: String,
+    val displayName: String,
+    val remoteAddr: String,
+    val remotePort: String,
+    val localPort: String,
+    val dnsServer1: String,
+    val dnsServer2: String,
+    val excludedApps: String,
+)
+
+object ExitVpnConfigStore {
+    fun load(preferences: SharedPreferences): Pair<List<ExitVpnConfig>, String?> {
+        val configsRaw = preferences.getString(PREF_KEY_EXIT_CONFIGS, "[]").orEmpty()
+        val parsedConfigs = mutableListOf<ExitVpnConfig>()
+        try {
+            val array = JSONArray(configsRaw)
+            for (index in 0 until array.length()) {
+                val item = array.optJSONObject(index) ?: continue
+                val id = item.optString("id")
+                if (id.isEmpty()) continue
+                parsedConfigs.add(
+                    ExitVpnConfig(
+                        id = id,
+                        displayName = item.optString("name", ""),
+                        remoteAddr = item.optString("remoteAddr", ""),
+                        remotePort = item.optString("remotePort", ""),
+                        localPort = item.optString("localPort", ""),
+                        dnsServer1 = item.optString("dnsServer1", ""),
+                        dnsServer2 = item.optString("dnsServer2", ""),
+                        excludedApps = item.optString("excludedApps", "")
+                    )
+                )
+            }
+        } catch (_: Exception) {
+            // fallback to migration path below
+        }
+
+        val configs = if (parsedConfigs.isNotEmpty()) parsedConfigs else listOf(migrateLegacy(preferences))
+        val activeIdPref = preferences.getString(PREF_KEY_EXIT_ACTIVE_CONFIG_ID, "")?.trim().orEmpty()
+        val activeId = if (configs.any { it.id == activeIdPref }) activeIdPref else configs.first().id
+        persist(preferences, configs, activeId)
+        return configs to activeId
+    }
+
+    fun getActive(preferences: SharedPreferences): ExitVpnConfig {
+        val (configs, activeId) = load(preferences)
+        return configs.firstOrNull { it.id == activeId } ?: configs.first()
+    }
+
+    fun persist(preferences: SharedPreferences, configs: List<ExitVpnConfig>, activeId: String) {
+        val normalized = if (configs.isEmpty()) listOf(defaultConfig(1)) else configs
+        val safeActiveId = if (normalized.any { it.id == activeId }) activeId else normalized.first().id
+        val array = JSONArray()
+        normalized.forEach { config ->
+            array.put(JSONObject().apply {
+                put("id", config.id)
+                put("name", config.displayName)
+                put("remoteAddr", config.remoteAddr)
+                put("remotePort", config.remotePort)
+                put("localPort", config.localPort)
+                put("dnsServer1", config.dnsServer1)
+                put("dnsServer2", config.dnsServer2)
+                put("excludedApps", config.excludedApps)
+            })
+        }
+        preferences.edit()
+            .putString(PREF_KEY_EXIT_CONFIGS, array.toString())
+            .putString(PREF_KEY_EXIT_ACTIVE_CONFIG_ID, safeActiveId)
+            .apply()
+    }
+
+    fun defaultConfig(number: Int): ExitVpnConfig {
+        return ExitVpnConfig(
+            id = UUID.randomUUID().toString(),
+            displayName = "Server $number",
+            remoteAddr = "",
+            remotePort = "",
+            localPort = "",
+            dnsServer1 = "",
+            dnsServer2 = "",
+            excludedApps = ""
+        )
+    }
+
+    private fun migrateLegacy(preferences: SharedPreferences): ExitVpnConfig {
+        val dnsServers = preferences.getString(PREF_KEY_EXIT_DNS_SERVERS, "").orEmpty()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+        return ExitVpnConfig(
+            id = UUID.randomUUID().toString(),
+            displayName = "Server 1",
+            remoteAddr = preferences.getString(PREF_KEY_EXIT_REMOTE_ADDR, "").orEmpty(),
+            remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "").orEmpty(),
+            localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "").orEmpty(),
+            dnsServer1 = dnsServers.getOrNull(0).orEmpty(),
+            dnsServer2 = dnsServers.getOrNull(1).orEmpty(),
+            excludedApps = preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "").orEmpty()
+        )
+    }
+}
 
 class GlobalApplication: Application(), YggStateReceiver.StateReceiver {
     private lateinit var config: ConfigurationProxy
@@ -34,6 +143,7 @@ class GlobalApplication: Application(), YggStateReceiver.StateReceiver {
         val receiver = YggStateReceiver(this)
         receiver.register(this)
         migrateDnsServers(this)
+        ExitVpnConfigStore.load(getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE))
     }
 
     fun subscribe() {

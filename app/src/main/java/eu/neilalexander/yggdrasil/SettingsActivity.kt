@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.app.AlertDialog
 import android.content.BroadcastReceiver
@@ -13,12 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.BaseAdapter
 import android.widget.*
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -35,6 +33,10 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var deviceNameEntry: EditText
     private lateinit var exitModeSwitch: MaterialSwitch
+    private lateinit var exitConfigSpinner: Spinner
+    private lateinit var addExitConfigButton: View
+    private lateinit var deleteExitConfigButton: View
+    private lateinit var exitConfigNameEntry: EditText
     private lateinit var exitRemoteAddrEntry: EditText
     private lateinit var exitRemotePortEntry: EditText
     private lateinit var exitLocalPortEntry: EditText
@@ -52,6 +54,9 @@ class SettingsActivity : AppCompatActivity() {
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
     private val mainThreadHandler = Handler(Looper.getMainLooper())
     private var areLauncherAppsLoaded = false
+    private var isUpdatingConfigFields = false
+    private var exitConfigs: MutableList<ExitVpnConfig> = mutableListOf()
+    private var activeConfigId: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,12 +67,15 @@ class SettingsActivity : AppCompatActivity() {
         excludedAppsRepository = ExcludedAppsRepository(packageManager)
         inflater = LayoutInflater.from(this)
 
-        // Toolbar
         val toolbar = findViewById<MaterialToolbar>(R.id.settingsToolbar)
         toolbar.setNavigationOnClickListener { finish() }
 
         deviceNameEntry = findViewById(R.id.deviceNameEntry)
         exitModeSwitch = findViewById(R.id.exitModeSwitch)
+        exitConfigSpinner = findViewById(R.id.exitConfigSpinner)
+        addExitConfigButton = findViewById(R.id.addExitConfigButton)
+        deleteExitConfigButton = findViewById(R.id.deleteExitConfigButton)
+        exitConfigNameEntry = findViewById(R.id.exitConfigNameEntry)
         exitRemoteAddrEntry = findViewById(R.id.exitRemoteAddrEntry)
         exitRemotePortEntry = findViewById(R.id.exitRemotePortEntry)
         exitLocalPortEntry = findViewById(R.id.exitLocalPortEntry)
@@ -89,40 +97,60 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        deviceNameEntry.setOnKeyListener { view, keyCode, event ->
+        deviceNameEntry.setOnKeyListener { _, keyCode, _ ->
             (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)
         }
 
         exitModeSwitch.setOnCheckedChangeListener { _, isChecked ->
             appSettings.edit().putBoolean(PREF_KEY_EXIT_MODE, isChecked).apply()
         }
-        exitRemoteAddrEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_REMOTE_ADDR, text?.toString().orEmpty()).apply()
-        }
-        exitRemotePortEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_REMOTE_PORT, text?.toString().orEmpty()).apply()
-        }
-        exitLocalPortEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_LOCAL_PORT, text?.toString().orEmpty()).apply()
-        }
-        val updateExitDnsServers = {
-            val dns1 = exitDnsServer1Entry.text?.toString()?.trim().orEmpty()
-            val dns2 = exitDnsServer2Entry.text?.toString()?.trim().orEmpty()
-            val combined = listOf(dns1, dns2).filter { it.isNotEmpty() }.joinToString(",")
-            appSettings.edit().putString(PREF_KEY_EXIT_DNS_SERVERS, combined).apply()
-        }
-        exitDnsServer1Entry.doOnTextChanged { _, _, _, _ ->
-            updateExitDnsServers()
-        }
-        exitDnsServer2Entry.doOnTextChanged { _, _, _, _ ->
-            updateExitDnsServers()
+        exitConfigSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selected = exitConfigs.getOrNull(position) ?: return
+                if (selected.id != activeConfigId) {
+                    activeConfigId = selected.id
+                    ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+                }
+                bindActiveConfigToFields()
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
 
-        exitExcludedAppsButton.setOnClickListener {
-            showExcludedAppsDialog()
+        addExitConfigButton.setOnClickListener { addExitConfig() }
+        deleteExitConfigButton.setOnClickListener { deleteActiveConfig() }
+
+        val saveActiveConfigFromFields = fun() {
+            if (isUpdatingConfigFields) {
+                return
+            }
+            val index = exitConfigs.indexOfFirst { it.id == activeConfigId }
+            if (index < 0) {
+                return
+            }
+            val updated = exitConfigs[index].copy(
+                displayName = exitConfigNameEntry.text?.toString().orEmpty(),
+                remoteAddr = exitRemoteAddrEntry.text?.toString().orEmpty(),
+                remotePort = exitRemotePortEntry.text?.toString().orEmpty(),
+                localPort = exitLocalPortEntry.text?.toString().orEmpty(),
+                dnsServer1 = exitDnsServer1Entry.text?.toString().orEmpty(),
+                dnsServer2 = exitDnsServer2Entry.text?.toString().orEmpty()
+            )
+            exitConfigs[index] = updated
+            ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+            refreshExitConfigSpinner()
+            updateExcludedAppsSummary()
         }
 
-        // DNS row
+        exitConfigNameEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitRemoteAddrEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitRemotePortEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitLocalPortEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitDnsServer1Entry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitDnsServer2Entry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+
+        exitExcludedAppsButton.setOnClickListener { showExcludedAppsDialog() }
+
         findViewById<View>(R.id.dnsRow).setOnClickListener {
             startActivity(Intent(this, DnsActivity::class.java))
         }
@@ -174,7 +202,6 @@ class SettingsActivity : AppCompatActivity() {
             true
         }
 
-        // Language switcher
         val languageRadioGroup = findViewById<RadioGroup>(R.id.languageRadioGroup)
         val savedLang = appSettings.getString("app_language", "")
         when (savedLang) {
@@ -198,6 +225,56 @@ class SettingsActivity : AppCompatActivity() {
 
         updateView()
         loadLauncherApps(filterSystemApps = true)
+    }
+
+    private fun addExitConfig() {
+        val created = ExitVpnConfigStore.defaultConfig(exitConfigs.size + 1)
+        exitConfigs.add(created)
+        activeConfigId = created.id
+        ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+        refreshExitConfigSpinner()
+        bindActiveConfigToFields()
+    }
+
+    private fun deleteActiveConfig() {
+        if (exitConfigs.size <= 1) {
+            Toast.makeText(this, R.string.exit_vpn_config_delete_last_error, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val index = exitConfigs.indexOfFirst { it.id == activeConfigId }
+        if (index < 0) return
+        exitConfigs.removeAt(index)
+        activeConfigId = exitConfigs.getOrNull((index - 1).coerceAtLeast(0))?.id.orEmpty()
+        ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+        refreshExitConfigSpinner()
+        bindActiveConfigToFields()
+    }
+
+    private fun bindActiveConfigToFields() {
+        val activeConfig = exitConfigs.firstOrNull { it.id == activeConfigId } ?: return
+        isUpdatingConfigFields = true
+        exitConfigNameEntry.setText(activeConfig.displayName, TextView.BufferType.EDITABLE)
+        exitRemoteAddrEntry.setText(activeConfig.remoteAddr, TextView.BufferType.EDITABLE)
+        exitRemotePortEntry.setText(activeConfig.remotePort, TextView.BufferType.EDITABLE)
+        exitLocalPortEntry.setText(activeConfig.localPort, TextView.BufferType.EDITABLE)
+        exitDnsServer1Entry.setText(activeConfig.dnsServer1, TextView.BufferType.EDITABLE)
+        exitDnsServer2Entry.setText(activeConfig.dnsServer2, TextView.BufferType.EDITABLE)
+        isUpdatingConfigFields = false
+        updateExcludedAppsSummary()
+    }
+
+    private fun refreshExitConfigSpinner() {
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            exitConfigs.map { it.displayName.ifBlank { getString(R.string.exit_vpn_unnamed_config) } }
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        exitConfigSpinner.adapter = adapter
+        val activeIndex = exitConfigs.indexOfFirst { it.id == activeConfigId }.coerceAtLeast(0)
+        if (exitConfigSpinner.selectedItemPosition != activeIndex) {
+            exitConfigSpinner.setSelection(activeIndex)
+        }
     }
 
     private fun setAppLocale(languageCode: String) {
@@ -238,22 +315,15 @@ class SettingsActivity : AppCompatActivity() {
         }
         publicKeyLabel.text = key
 
-        // ExitVPN is always enabled — force it on
         appSettings.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
         exitModeSwitch.isChecked = true
-        exitRemoteAddrEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_ADDR, ""), TextView.BufferType.EDITABLE)
-        exitRemotePortEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_PORT, ""), TextView.BufferType.EDITABLE)
-        exitLocalPortEntry.setText(appSettings.getString(PREF_KEY_EXIT_LOCAL_PORT, ""), TextView.BufferType.EDITABLE)
-        val savedDnsServers = appSettings.getString(PREF_KEY_EXIT_DNS_SERVERS, "").orEmpty()
-        val dnsServers = savedDnsServers
-            .split(",")
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-        exitDnsServer1Entry.setText(dnsServers.getOrNull(0).orEmpty(), TextView.BufferType.EDITABLE)
-        exitDnsServer2Entry.setText(dnsServers.getOrNull(1).orEmpty(), TextView.BufferType.EDITABLE)
-        updateExcludedAppsSummary()
 
-        // Update DNS value
+        val loaded = ExitVpnConfigStore.load(appSettings)
+        exitConfigs = loaded.first.toMutableList()
+        activeConfigId = loaded.second.orEmpty()
+        refreshExitConfigSpinner()
+        bindActiveConfigToFields()
+
         val preferences = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this.baseContext)
         val serverString = preferences.getString(KEY_DNS_SERVERS, "")
         if (serverString!!.isNotEmpty()) {
@@ -268,9 +338,9 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun getExcludedPackagesFromSettings(): MutableSet<String> {
-        return appSettings
-            .getString(PREF_KEY_EXIT_EXCLUDED_APPS, "")
+    private fun getActiveExcludedPackagesFromSettings(): MutableSet<String> {
+        val activeConfig = exitConfigs.firstOrNull { it.id == activeConfigId }
+        return activeConfig?.excludedApps
             .orEmpty()
             .split(",")
             .map { it.trim() }
@@ -284,7 +354,7 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
 
-        val selectedPackages = getExcludedPackagesFromSettings()
+        val selectedPackages = getActiveExcludedPackagesFromSettings()
         val listView = ListView(this)
         val adapter = ExcludedAppsAdapter(selectedPackages)
         listView.adapter = adapter
@@ -303,10 +373,12 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(getString(R.string.exit_vpn_excluded_apps))
             .setView(listView)
             .setPositiveButton(getString(R.string.save)) { dialog, _ ->
-                val value = selectedPackages
-                    .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                    .joinToString(",")
-                appSettings.edit().putString(PREF_KEY_EXIT_EXCLUDED_APPS, value).apply()
+                val value = selectedPackages.sortedWith(String.CASE_INSENSITIVE_ORDER).joinToString(",")
+                val index = exitConfigs.indexOfFirst { it.id == activeConfigId }
+                if (index >= 0) {
+                    exitConfigs[index] = exitConfigs[index].copy(excludedApps = value)
+                    ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+                }
                 updateExcludedAppsSummary()
                 dialog.dismiss()
             }
@@ -317,16 +389,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateExcludedAppsSummary() {
-        val selectedPackages = getExcludedPackagesFromSettings()
+        val selectedPackages = getActiveExcludedPackagesFromSettings()
         if (selectedPackages.isEmpty()) {
             exitExcludedAppsSummary.text = getString(R.string.exit_vpn_excluded_apps_none)
             return
         }
 
         val packageToLabel = launcherApps.associate { it.packageName to it.label }
-        val selectedLabels = selectedPackages
-            .map { packageToLabel[it] ?: it }
-            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+        val selectedLabels = selectedPackages.map { packageToLabel[it] ?: it }.sortedWith(String.CASE_INSENSITIVE_ORDER)
         exitExcludedAppsSummary.text = if (selectedLabels.isEmpty()) {
             getString(R.string.exit_vpn_excluded_apps_none)
         } else {
@@ -338,7 +408,6 @@ class SettingsActivity : AppCompatActivity() {
         backgroundExecutor.execute {
             val loadedApps = excludedAppsRepository.loadLauncherApps(filterSystemApps)
             mainThreadHandler.post {
-                // Filter out our own app from the excluded apps list
                 launcherApps = loadedApps.filter { it.packageName != packageName }
                 areLauncherAppsLoaded = true
                 updateExcludedAppsSummary()

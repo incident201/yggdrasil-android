@@ -123,6 +123,12 @@
     <string name="exit_vpn_server_desc">Адрес сервера и порты для Exit VPN туннеля</string>
     <string name="exit_vpn_dns_desc">DNS-серверы, используемые при активном Exit VPN</string>
     <string name="exit_vpn_excluded_desc">Приложения, которые обходят VPN-туннель</string>
+    <string name="exit_vpn_profiles">Сохранённые серверы</string>
+    <string name="exit_vpn_config_name">Отображаемое имя</string>
+    <string name="exit_vpn_config_add">Добавить сервер</string>
+    <string name="exit_vpn_config_delete">Удалить сервер</string>
+    <string name="exit_vpn_unnamed_config">Сервер без имени</string>
+    <string name="exit_vpn_config_delete_last_error">Должен остаться минимум один сервер</string>
     <string name="tile_disabled">Отключено</string>
     <string name="tile_enabled">Включено (Нет соединения)</string>
     <string name="tile_connected">Подключено</string>

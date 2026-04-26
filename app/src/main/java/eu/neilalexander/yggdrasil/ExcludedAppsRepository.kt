@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.content.Intent
 import android.content.pm.ApplicationInfo
