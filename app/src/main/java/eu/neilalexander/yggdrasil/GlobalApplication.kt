@@ -35,19 +35,22 @@ data class ExitVpnConfig(
     val localPort: String,
     val dnsServer1: String,
     val dnsServer2: String,
-    val excludedApps: String,
 )
 
 object ExitVpnConfigStore {
     fun load(preferences: SharedPreferences): Pair<List<ExitVpnConfig>, String?> {
         val configsRaw = preferences.getString(PREF_KEY_EXIT_CONFIGS, "[]").orEmpty()
         val parsedConfigs = mutableListOf<ExitVpnConfig>()
+        var migratedExcludedApps = ""
         try {
             val array = JSONArray(configsRaw)
             for (index in 0 until array.length()) {
                 val item = array.optJSONObject(index) ?: continue
                 val id = item.optString("id")
                 if (id.isEmpty()) continue
+                if (migratedExcludedApps.isBlank()) {
+                    migratedExcludedApps = item.optString("excludedApps", "")
+                }
                 parsedConfigs.add(
                     ExitVpnConfig(
                         id = id,
@@ -56,8 +59,7 @@ object ExitVpnConfigStore {
                         remotePort = item.optString("remotePort", ""),
                         localPort = item.optString("localPort", ""),
                         dnsServer1 = item.optString("dnsServer1", ""),
-                        dnsServer2 = item.optString("dnsServer2", ""),
-                        excludedApps = item.optString("excludedApps", "")
+                        dnsServer2 = item.optString("dnsServer2", "")
                     )
                 )
             }
@@ -68,6 +70,9 @@ object ExitVpnConfigStore {
         val configs = if (parsedConfigs.isNotEmpty()) parsedConfigs else listOf(migrateLegacy(preferences))
         val activeIdPref = preferences.getString(PREF_KEY_EXIT_ACTIVE_CONFIG_ID, "")?.trim().orEmpty()
         val activeId = if (configs.any { it.id == activeIdPref }) activeIdPref else configs.first().id
+        if (preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "").isNullOrBlank() && migratedExcludedApps.isNotBlank()) {
+            preferences.edit().putString(PREF_KEY_EXIT_EXCLUDED_APPS, migratedExcludedApps).apply()
+        }
         persist(preferences, configs, activeId)
         return configs to activeId
     }
@@ -90,7 +95,6 @@ object ExitVpnConfigStore {
                 put("localPort", config.localPort)
                 put("dnsServer1", config.dnsServer1)
                 put("dnsServer2", config.dnsServer2)
-                put("excludedApps", config.excludedApps)
             })
         }
         preferences.edit()
@@ -107,8 +111,7 @@ object ExitVpnConfigStore {
             remotePort = "",
             localPort = "",
             dnsServer1 = "",
-            dnsServer2 = "",
-            excludedApps = ""
+            dnsServer2 = ""
         )
     }
 
@@ -124,8 +127,7 @@ object ExitVpnConfigStore {
             remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "").orEmpty(),
             localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "").orEmpty(),
             dnsServer1 = dnsServers.getOrNull(0).orEmpty(),
-            dnsServer2 = dnsServers.getOrNull(1).orEmpty(),
-            excludedApps = preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "").orEmpty()
+            dnsServer2 = dnsServers.getOrNull(1).orEmpty()
         )
     }
 }

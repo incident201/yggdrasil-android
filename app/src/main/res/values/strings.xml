@@ -142,6 +142,10 @@
     <string name="exit_vpn_config_delete">Delete server</string>
     <string name="exit_vpn_unnamed_config">Unnamed server</string>
     <string name="exit_vpn_config_delete_last_error">At least one server must remain</string>
+    <string name="exit_vpn_config_delete_confirm_title">Delete %s?</string>
+    <string name="exit_vpn_config_delete_confirm_message">The server profile will be removed from the list.</string>
+    <string name="exit_vpn_new_server_default_name">Server %d</string>
+    <string name="exit_vpn_excluded_apps_global_title">Excluded apps (all servers)</string>
 
     <!-- Tile -->
     <string name="tile_disabled">Disabled</string>

@@ -498,7 +498,7 @@ open class PacketTunnelProvider: VpnService() {
             Log.w(TAG, "Failed to self-exclude app", e)
         }
 
-        activeConfig.excludedApps
+        preferences.getString(PREF_KEY_EXIT_EXCLUDED_APPS, "").orEmpty()
             .split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() && it != applicationContext.packageName }

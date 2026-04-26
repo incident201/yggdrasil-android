@@ -129,6 +129,10 @@
     <string name="exit_vpn_config_delete">Удалить сервер</string>
     <string name="exit_vpn_unnamed_config">Сервер без имени</string>
     <string name="exit_vpn_config_delete_last_error">Должен остаться минимум один сервер</string>
+    <string name="exit_vpn_config_delete_confirm_title">Удалить %s?</string>
+    <string name="exit_vpn_config_delete_confirm_message">Профиль сервера будет удалён из списка.</string>
+    <string name="exit_vpn_new_server_default_name">Сервер %d</string>
+    <string name="exit_vpn_excluded_apps_global_title">Исключённые приложения (для всех серверов)</string>
     <string name="tile_disabled">Отключено</string>
     <string name="tile_enabled">Включено (Нет соединения)</string>
     <string name="tile_connected">Подключено</string>

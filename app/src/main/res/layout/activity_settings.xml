@@ -112,7 +112,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="12dp">
 
                         <Spinner
                             android:id="@+id/exitConfigSpinner"
@@ -120,23 +120,33 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1" />
 
-                        <ImageButton
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/addExitConfigButton"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
                             android:layout_marginStart="8dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/exit_vpn_config_add"
-                            android:src="@drawable/ic_baseline_add_24" />
+                            app:icon="@drawable/ic_baseline_add_24"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp"
+                            android:insetLeft="0dp"
+                            android:insetRight="0dp"
+                            android:text="" />
 
-                        <ImageButton
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/deleteExitConfigButton"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
                             android:layout_marginStart="4dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
                             android:contentDescription="@string/exit_vpn_config_delete"
-                            android:src="@drawable/ic_baseline_remove_circle_24" />
+                            app:icon="@drawable/ic_baseline_remove_circle_24"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp"
+                            android:insetLeft="0dp"
+                            android:insetRight="0dp"
+                            android:text="" />
 
                     </LinearLayout>
 
@@ -279,12 +289,33 @@
 
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorSurfaceVariant"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="8dp" />
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp"
+                style="@style/Widget.Material3.CardView.Filled">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/exit_vpn_excluded_apps_global_title"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:layout_marginBottom="4dp" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -292,7 +323,7 @@
                         android:text="@string/exit_vpn_excluded_desc"
                         android:textSize="12sp"
                         android:textColor="?attr/colorOnSurfaceVariant"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="8dp" />
 
                     <TextView
                         android:id="@+id/exitExcludedAppsSummary"
@@ -301,7 +332,7 @@
                         android:text="@string/exit_vpn_excluded_apps_none"
                         android:textSize="13sp"
                         android:textColor="?attr/colorOnSurface"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginBottom="12dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/exitExcludedAppsButton"
