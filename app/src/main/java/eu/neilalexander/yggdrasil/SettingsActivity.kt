@@ -17,6 +17,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.*
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -110,8 +111,8 @@ class SettingsActivity : AppCompatActivity() {
                 if (selected.id != activeConfigId) {
                     activeConfigId = selected.id
                     ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
+                    bindActiveConfigToFields()
                 }
-                bindActiveConfigToFields()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
@@ -136,9 +137,12 @@ class SettingsActivity : AppCompatActivity() {
                 dnsServer1 = exitDnsServer1Entry.text?.toString().orEmpty(),
                 dnsServer2 = exitDnsServer2Entry.text?.toString().orEmpty()
             )
+            val displayNameChanged = exitConfigs[index].displayName != updated.displayName
             exitConfigs[index] = updated
             ExitVpnConfigStore.persist(appSettings, exitConfigs, activeConfigId)
-            refreshExitConfigSpinner()
+            if (displayNameChanged) {
+                refreshExitConfigSpinner()
+            }
         }
 
         exitConfigNameEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
@@ -236,10 +240,22 @@ class SettingsActivity : AppCompatActivity() {
             hint = getString(R.string.exit_vpn_config_name)
             addView(input)
         }
+        val dialogContent = FrameLayout(this).apply {
+            val horizontalPadding = resources.getDimensionPixelSize(R.dimen.dialog_content_padding_horizontal)
+            val topPadding = resources.getDimensionPixelSize(R.dimen.dialog_content_padding_top)
+            setPadding(horizontalPadding, topPadding, horizontalPadding, 0)
+            addView(
+                inputLayout,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.exit_vpn_config_add)
-            .setView(inputLayout)
+            .setView(dialogContent)
             .setPositiveButton(R.string.add) { dialog, _ ->
                 val created = ExitVpnConfigStore.defaultConfig(exitConfigs.size + 1).copy(
                     displayName = input.text?.toString()?.trim().orEmpty()
