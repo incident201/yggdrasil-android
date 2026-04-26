@@ -1,4 +1,4 @@
-package eu.neilalexander.yggdrasil
+package io.yggdrasilvpn
 
 import android.Manifest
 import android.app.Activity
@@ -24,8 +24,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import eu.neilalexander.yggdrasil.BuildConfig
-import eu.neilalexander.yggdrasil.PacketTunnelProvider.Companion.STATE_INTENT
+import io.yggdrasilvpn.BuildConfig
+import io.yggdrasilvpn.PacketTunnelProvider.Companion.STATE_INTENT
 import mobile.Mobile
 import org.json.JSONArray
 import java.util.Locale
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         // ExitVPN is always on — ensure the pref is set
         val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
         appPreferences.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
-        connectionModeText.text = getString(R.string.mode_exit_vpn)
+        connectionModeText.text = getActiveExitConfigName()
 
         // VPN button click
         vpnButton.setOnClickListener {
@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         isVpnEnabled = preferences.getBoolean(PREF_KEY_ENABLED, false)
 
         // ExitVPN always on
-        connectionModeText.text = getString(R.string.mode_exit_vpn)
+        connectionModeText.text = getActiveExitConfigName()
 
         if (!isVpnEnabled) {
             updateButtonState(false, false)
@@ -231,6 +231,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         (application as GlobalApplication).subscribe()
+    }
+
+
+    private fun getActiveExitConfigName(): String {
+        val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        val active = ExitVpnConfigStore.getActive(appPreferences)
+        return active.displayName.ifBlank { getString(R.string.mode_exit_vpn) }
     }
 
     override fun onPause() {
