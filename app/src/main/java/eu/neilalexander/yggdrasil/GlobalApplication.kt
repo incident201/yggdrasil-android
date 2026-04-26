@@ -19,6 +19,9 @@ const val PREF_KEY_EXIT_REMOTE_PORT = "exit_remote_port"
 const val PREF_KEY_EXIT_LOCAL_PORT = "exit_local_port"
 const val PREF_KEY_EXIT_DNS_SERVERS = "exit_dns_servers"
 const val PREF_KEY_EXIT_EXCLUDED_APPS = "exit_excluded_apps"
+const val PREF_KEY_SERVER_PROFILES = "server_profiles"
+const val PREF_KEY_ACTIVE_SERVER_ID = "active_server_id"
+const val PREF_KEY_ACTIVE_SERVER_NAME = "active_server_name"
 const val MAIN_CHANNEL_ID = "Yggdrasil Service"
 
 class GlobalApplication: Application(), YggStateReceiver.StateReceiver {
@@ -34,6 +37,7 @@ class GlobalApplication: Application(), YggStateReceiver.StateReceiver {
         val receiver = YggStateReceiver(this)
         receiver.register(this)
         migrateDnsServers(this)
+        ServerProfilesRepository(this).getProfiles()
     }
 
     fun subscribe() {

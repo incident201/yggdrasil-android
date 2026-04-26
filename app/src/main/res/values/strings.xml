@@ -9,6 +9,7 @@
     <string name="status_no_connectivity">No connectivity</string>
     <string name="connect_button_desc">Connect / Disconnect VPN</string>
     <string name="mode_exit_vpn">Exit VPN Mode</string>
+    <string name="connected_server_format">Server: %1$s</string>
     <string name="mode_yggdrasil">Yggdrasil Network Mode</string>
     <string name="your_ip_address">IP Address</string>
     <string name="your_subnet">Subnet</string>
@@ -168,4 +169,13 @@
     <!-- Advanced -->
     <string name="advanced_settings">Advanced</string>
     <string name="version_label">Version</string>
+    <string name="servers_title">Servers</string>
+    <string name="server_add">Add server</string>
+    <string name="server_add_title">Add server</string>
+    <string name="server_edit_title">Edit server</string>
+    <string name="server_name">Server name</string>
+    <string name="server_dns">DNS servers (comma separated)</string>
+    <string name="server_default_name">Default server</string>
+    <string name="server_active">Active</string>
+    <string name="server_delete_title">Delete %1$s?</string>
 </resources>

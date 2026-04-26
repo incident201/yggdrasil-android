@@ -453,9 +453,11 @@ open class PacketTunnelProvider: VpnService() {
     }
 
     private fun startExitMode(preferences: SharedPreferences): ParcelFileDescriptor? {
-        val remoteAddr = preferences.getString(PREF_KEY_EXIT_REMOTE_ADDR, "")?.trim().orEmpty()
-        val remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "")?.trim().orEmpty().toLongOrNull()
-        val localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "")?.trim().orEmpty().toLongOrNull()
+        val serverRepository = ServerProfilesRepository(this)
+        val activeProfile = serverRepository.getActiveProfile()
+        val remoteAddr = activeProfile?.ipv6Address?.trim().orEmpty()
+        val remotePort = activeProfile?.remotePort?.trim().orEmpty().toLongOrNull()
+        val localPort = activeProfile?.localPort?.trim().orEmpty().toLongOrNull()
         if (remoteAddr.isEmpty() || remotePort == null || localPort == null) {
             Log.e(TAG, "Exit mode is enabled but remote address/ports are not configured")
             return null
@@ -479,7 +481,7 @@ open class PacketTunnelProvider: VpnService() {
             builder.setMetered(false)
         }
 
-        val dnsServers = preferences.getString(PREF_KEY_EXIT_DNS_SERVERS, "")?.trim().orEmpty()
+        val dnsServers = activeProfile?.dnsServers?.trim().orEmpty()
         val servers = if (dnsServers.isNotEmpty()) {
             dnsServers.split(",")
         } else {
