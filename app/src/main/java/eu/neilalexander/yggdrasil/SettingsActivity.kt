@@ -46,6 +46,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var resetConfigurationRow: View
     private lateinit var dnsValue: TextView
     private lateinit var appSettings: SharedPreferences
+    private lateinit var serverProfilesRepository: ServerProfilesRepository
     private lateinit var excludedAppsRepository: ExcludedAppsRepository
     private var publicKeyReset = false
     private var launcherApps: List<ExcludedAppsRepository.LauncherApp> = emptyList()
@@ -59,6 +60,7 @@ class SettingsActivity : AppCompatActivity() {
 
         config = ConfigurationProxy(applicationContext)
         appSettings = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
+        serverProfilesRepository = ServerProfilesRepository(this)
         excludedAppsRepository = ExcludedAppsRepository(packageManager)
         inflater = LayoutInflater.from(this)
 
@@ -97,19 +99,19 @@ class SettingsActivity : AppCompatActivity() {
             appSettings.edit().putBoolean(PREF_KEY_EXIT_MODE, isChecked).apply()
         }
         exitRemoteAddrEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_REMOTE_ADDR, text?.toString().orEmpty()).apply()
+            updateActiveServer { it.copy(ipv6Address = text?.toString().orEmpty()) }
         }
         exitRemotePortEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_REMOTE_PORT, text?.toString().orEmpty()).apply()
+            updateActiveServer { it.copy(remotePort = text?.toString().orEmpty()) }
         }
         exitLocalPortEntry.doOnTextChanged { text, _, _, _ ->
-            appSettings.edit().putString(PREF_KEY_EXIT_LOCAL_PORT, text?.toString().orEmpty()).apply()
+            updateActiveServer { it.copy(localPort = text?.toString().orEmpty()) }
         }
         val updateExitDnsServers = {
             val dns1 = exitDnsServer1Entry.text?.toString()?.trim().orEmpty()
             val dns2 = exitDnsServer2Entry.text?.toString()?.trim().orEmpty()
             val combined = listOf(dns1, dns2).filter { it.isNotEmpty() }.joinToString(",")
-            appSettings.edit().putString(PREF_KEY_EXIT_DNS_SERVERS, combined).apply()
+            updateActiveServer { it.copy(dnsServers = combined) }
         }
         exitDnsServer1Entry.doOnTextChanged { _, _, _, _ ->
             updateExitDnsServers()
@@ -241,10 +243,11 @@ class SettingsActivity : AppCompatActivity() {
         // ExitVPN is always enabled — force it on
         appSettings.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
         exitModeSwitch.isChecked = true
-        exitRemoteAddrEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_ADDR, ""), TextView.BufferType.EDITABLE)
-        exitRemotePortEntry.setText(appSettings.getString(PREF_KEY_EXIT_REMOTE_PORT, ""), TextView.BufferType.EDITABLE)
-        exitLocalPortEntry.setText(appSettings.getString(PREF_KEY_EXIT_LOCAL_PORT, ""), TextView.BufferType.EDITABLE)
-        val savedDnsServers = appSettings.getString(PREF_KEY_EXIT_DNS_SERVERS, "").orEmpty()
+        val activeServer = serverProfilesRepository.getActiveProfile()
+        exitRemoteAddrEntry.setText(activeServer?.ipv6Address.orEmpty(), TextView.BufferType.EDITABLE)
+        exitRemotePortEntry.setText(activeServer?.remotePort.orEmpty(), TextView.BufferType.EDITABLE)
+        exitLocalPortEntry.setText(activeServer?.localPort.orEmpty(), TextView.BufferType.EDITABLE)
+        val savedDnsServers = activeServer?.dnsServers.orEmpty()
         val dnsServers = savedDnsServers
             .split(",")
             .map { it.trim() }
@@ -332,6 +335,15 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             selectedLabels.joinToString("\n")
         }
+    }
+
+    private fun updateActiveServer(transform: (ServerProfile) -> ServerProfile) {
+        val allProfiles = serverProfilesRepository.getProfiles()
+        val activeId = serverProfilesRepository.getActiveProfileId()
+        val index = allProfiles.indexOfFirst { it.id == activeId }
+        if (index < 0) return
+        allProfiles[index] = transform(allProfiles[index])
+        serverProfilesRepository.saveProfiles(allProfiles)
     }
 
     private fun loadLauncherApps(filterSystemApps: Boolean) {

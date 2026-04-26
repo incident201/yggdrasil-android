@@ -8,6 +8,7 @@
     <string name="status_no_connectivity">Нет соединения</string>
     <string name="connect_button_desc">Подключить / Отключить VPN</string>
     <string name="mode_exit_vpn">Режим Exit VPN</string>
+    <string name="connected_server_format">Сервер: %1$s</string>
     <string name="mode_yggdrasil">Режим сети Yggdrasil</string>
     <string name="your_ip_address">IP-адрес</string>
     <string name="your_subnet">Подсеть</string>
@@ -145,4 +146,13 @@
     <string name="yggdrasil_dns_desc">DNS-серверы для сети Yggdrasil</string>
     <string name="advanced_settings">Дополнительно</string>
     <string name="version_label">Версия</string>
+    <string name="servers_title">Серверы</string>
+    <string name="server_add">Добавить сервер</string>
+    <string name="server_add_title">Добавить сервер</string>
+    <string name="server_edit_title">Редактировать сервер</string>
+    <string name="server_name">Имя сервера</string>
+    <string name="server_dns">DNS-серверы (через запятую)</string>
+    <string name="server_default_name">Сервер по умолчанию</string>
+    <string name="server_active">Активный</string>
+    <string name="server_delete_title">Удалить %1$s?</string>
 </resources>
