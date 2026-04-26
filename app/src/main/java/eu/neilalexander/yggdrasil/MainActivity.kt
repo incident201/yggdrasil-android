@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var copyIpButton: ImageButton
     private lateinit var peersCountText: TextView
     private lateinit var versionText: TextView
-    private lateinit var serverRepository: ServerProfilesRepository
 
     private var isVpnEnabled = false
     private var isConnected = false
@@ -83,7 +82,6 @@ class MainActivity : AppCompatActivity() {
         copyIpButton = findViewById(R.id.copyIpButton)
         peersCountText = findViewById(R.id.peersCountText)
         versionText = findViewById(R.id.versionText)
-        serverRepository = ServerProfilesRepository(this)
 
         // Show app version: use BuildConfig.VERSION_NAME + Go library version
         val appVersion = BuildConfig.VERSION_NAME
@@ -101,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         // ExitVPN is always on — ensure the pref is set
         val appPreferences = getSharedPreferences(APP_SETTINGS_NAME, MODE_PRIVATE)
         appPreferences.edit().putBoolean(PREF_KEY_EXIT_MODE, true).apply()
-        updateActiveServerName()
+        connectionModeText.text = getString(R.string.mode_exit_vpn)
 
         // VPN button click
         vpnButton.setOnClickListener {
@@ -141,11 +139,6 @@ class MainActivity : AppCompatActivity() {
         // Settings row
         findViewById<View>(R.id.settingsRow).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
-        }
-
-        // Servers row
-        findViewById<View>(R.id.serverRow).setOnClickListener {
-            startActivity(Intent(this, ServersActivity::class.java))
         }
 
         // Long press on IP to copy
@@ -227,7 +220,7 @@ class MainActivity : AppCompatActivity() {
         isVpnEnabled = preferences.getBoolean(PREF_KEY_ENABLED, false)
 
         // ExitVPN always on
-        updateActiveServerName()
+        connectionModeText.text = getString(R.string.mode_exit_vpn)
 
         if (!isVpnEnabled) {
             updateButtonState(false, false)
@@ -337,13 +330,6 @@ class MainActivity : AppCompatActivity() {
                 commit()
             }
         }
-    }
-
-    private fun updateActiveServerName() {
-        val activeName = serverRepository.getActiveProfile()?.name
-            ?.ifBlank { getString(R.string.server_default_name) }
-            ?: getString(R.string.server_default_name)
-        connectionModeText.text = getString(R.string.connected_server_format, activeName)
     }
 
     override fun attachBaseContext(newBase: Context) {
