@@ -30,6 +30,7 @@ const val MAIN_CHANNEL_ID = "Yggdrasil Service"
 data class ExitVpnConfig(
     val id: String,
     val displayName: String,
+    val innerIp: String,
     val remoteAddr: String,
     val remotePort: String,
     val localPort: String,
@@ -55,6 +56,7 @@ object ExitVpnConfigStore {
                     ExitVpnConfig(
                         id = id,
                         displayName = item.optString("name", ""),
+                        innerIp = item.optString("innerIp", "10.66.0.2"),
                         remoteAddr = item.optString("remoteAddr", ""),
                         remotePort = item.optString("remotePort", ""),
                         localPort = item.optString("localPort", ""),
@@ -90,6 +92,7 @@ object ExitVpnConfigStore {
             array.put(JSONObject().apply {
                 put("id", config.id)
                 put("name", config.displayName)
+                put("innerIp", config.innerIp)
                 put("remoteAddr", config.remoteAddr)
                 put("remotePort", config.remotePort)
                 put("localPort", config.localPort)
@@ -107,6 +110,7 @@ object ExitVpnConfigStore {
         return ExitVpnConfig(
             id = UUID.randomUUID().toString(),
             displayName = "Server $number",
+            innerIp = "10.66.0.2",
             remoteAddr = "",
             remotePort = "",
             localPort = "",
@@ -123,6 +127,7 @@ object ExitVpnConfigStore {
         return ExitVpnConfig(
             id = UUID.randomUUID().toString(),
             displayName = "Server 1",
+            innerIp = "10.66.0.2",
             remoteAddr = preferences.getString(PREF_KEY_EXIT_REMOTE_ADDR, "").orEmpty(),
             remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "").orEmpty(),
             localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "").orEmpty(),
