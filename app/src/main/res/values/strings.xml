@@ -124,6 +124,7 @@
     <string name="exit_vpn_settings">Exit VPN Settings</string>
     <string name="exit_vpn_enabled">Enable Exit VPN</string>
     <string name="exit_vpn_remote_addr">Remote Yggdrasil IPv6</string>
+    <string name="exit_vpn_inner_ip">Inner VPN IPv4</string>
     <string name="exit_vpn_remote_port">Remote UDP port</string>
     <string name="exit_vpn_local_port">Local UDP port</string>
     <string name="exit_vpn_dns_server_1">DNS 1</string>
@@ -135,6 +136,7 @@
     <string name="exit_vpn_hint">These are app-level runtime settings for Exit VPN mode and are stored separately from node configuration.</string>
     <string name="exit_vpn_server_desc">Server address and ports for the Exit VPN tunnel</string>
     <string name="exit_vpn_dns_desc">DNS servers used when Exit VPN is active</string>
+    <string name="exit_vpn_inner_ip_error">Use a valid IPv4 host address (not .0, .1, or .255)</string>
     <string name="exit_vpn_excluded_desc">Apps that bypass the VPN tunnel</string>
     <string name="exit_vpn_profiles">Saved servers</string>
     <string name="exit_vpn_config_name">Display name</string>

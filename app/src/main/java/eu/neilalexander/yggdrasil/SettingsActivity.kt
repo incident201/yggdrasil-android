@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.InputFilter
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +26,8 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import androidx.core.widget.doOnTextChanged
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.json.JSONObject
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.util.Locale
 import java.util.concurrent.Executors
 
@@ -38,6 +41,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var addExitConfigButton: View
     private lateinit var deleteExitConfigButton: View
     private lateinit var exitConfigNameEntry: EditText
+    private lateinit var exitInnerIpEntry: EditText
     private lateinit var exitRemoteAddrEntry: EditText
     private lateinit var exitRemotePortEntry: EditText
     private lateinit var exitLocalPortEntry: EditText
@@ -77,6 +81,7 @@ class SettingsActivity : AppCompatActivity() {
         addExitConfigButton = findViewById(R.id.addExitConfigButton)
         deleteExitConfigButton = findViewById(R.id.deleteExitConfigButton)
         exitConfigNameEntry = findViewById(R.id.exitConfigNameEntry)
+        exitInnerIpEntry = findViewById(R.id.exitInnerIpEntry)
         exitRemoteAddrEntry = findViewById(R.id.exitRemoteAddrEntry)
         exitRemotePortEntry = findViewById(R.id.exitRemotePortEntry)
         exitLocalPortEntry = findViewById(R.id.exitLocalPortEntry)
@@ -121,6 +126,8 @@ class SettingsActivity : AppCompatActivity() {
         addExitConfigButton.setOnClickListener { addExitConfig() }
         deleteExitConfigButton.setOnClickListener { confirmDeleteActiveConfig() }
 
+        exitInnerIpEntry.filters = arrayOf(InputFilter.LengthFilter(15))
+
         val saveActiveConfigFromFields = fun() {
             if (isUpdatingConfigFields) {
                 return
@@ -129,8 +136,12 @@ class SettingsActivity : AppCompatActivity() {
             if (index < 0) {
                 return
             }
+            val innerIp = exitInnerIpEntry.text?.toString().orEmpty()
+            val innerIpError = validateExitInnerIp(innerIp)
+            exitInnerIpEntry.error = innerIpError
             val updated = exitConfigs[index].copy(
                 displayName = exitConfigNameEntry.text?.toString().orEmpty(),
+                innerIp = innerIp,
                 remoteAddr = exitRemoteAddrEntry.text?.toString().orEmpty(),
                 remotePort = exitRemotePortEntry.text?.toString().orEmpty(),
                 localPort = exitLocalPortEntry.text?.toString().orEmpty(),
@@ -146,6 +157,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         exitConfigNameEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitInnerIpEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
         exitRemoteAddrEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
         exitRemotePortEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
         exitLocalPortEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
@@ -306,6 +318,8 @@ class SettingsActivity : AppCompatActivity() {
         val activeConfig = exitConfigs.firstOrNull { it.id == activeConfigId } ?: return
         isUpdatingConfigFields = true
         exitConfigNameEntry.setText(activeConfig.displayName, TextView.BufferType.EDITABLE)
+        exitInnerIpEntry.setText(activeConfig.innerIp, TextView.BufferType.EDITABLE)
+        exitInnerIpEntry.error = validateExitInnerIp(activeConfig.innerIp)
         exitRemoteAddrEntry.setText(activeConfig.remoteAddr, TextView.BufferType.EDITABLE)
         exitRemotePortEntry.setText(activeConfig.remotePort, TextView.BufferType.EDITABLE)
         exitLocalPortEntry.setText(activeConfig.localPort, TextView.BufferType.EDITABLE)
@@ -326,6 +340,20 @@ class SettingsActivity : AppCompatActivity() {
         if (exitConfigSpinner.selectedItemPosition != activeIndex) {
             exitConfigSpinner.setSelection(activeIndex)
         }
+    }
+
+    private fun validateExitInnerIp(innerIp: String): String? {
+        val address = try {
+            InetAddress.getByName(innerIp.trim())
+        } catch (_: Exception) {
+            null
+        } as? Inet4Address ?: return getString(R.string.exit_vpn_inner_ip_error)
+        val bytes = address.address
+        val fourth = bytes[3].toInt() and 0xFF
+        if (fourth == 0 || fourth == 1 || fourth == 255) {
+            return getString(R.string.exit_vpn_inner_ip_error)
+        }
+        return null
     }
 
     private fun setAppLocale(languageCode: String) {

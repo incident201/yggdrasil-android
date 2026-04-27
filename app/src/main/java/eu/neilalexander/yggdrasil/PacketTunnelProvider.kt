@@ -15,6 +15,8 @@ import mobile.Yggdrasil
 import org.json.JSONArray
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
@@ -454,11 +456,12 @@ open class PacketTunnelProvider: VpnService() {
 
     private fun startExitMode(preferences: SharedPreferences): ParcelFileDescriptor? {
         val activeConfig = ExitVpnConfigStore.getActive(preferences)
+        val innerIp = activeConfig.innerIp.trim()
         val remoteAddr = activeConfig.remoteAddr.trim()
         val remotePort = activeConfig.remotePort.trim().toLongOrNull()
         val localPort = activeConfig.localPort.trim().toLongOrNull()
-        if (remoteAddr.isEmpty() || remotePort == null || localPort == null) {
-            Log.e(TAG, "Exit mode is enabled but remote address/ports are not configured")
+        if (remoteAddr.isEmpty() || remotePort == null || localPort == null || !isAllowedExitInnerIp(innerIp)) {
+            Log.e(TAG, "Exit mode is enabled but remote address/ports/inner IP are not configured")
             return null
         }
         if (remotePort <= 0 || localPort <= 0) {
@@ -469,7 +472,7 @@ open class PacketTunnelProvider: VpnService() {
         val effectiveMtu = 1280
 
         val builder = Builder()
-            .addAddress("10.66.0.2", 24)
+            .addAddress(innerIp, 24)
             .addRoute("0.0.0.0", 0)
             .allowFamily(OsConstants.AF_INET)
             .allowBypass()
@@ -518,5 +521,16 @@ open class PacketTunnelProvider: VpnService() {
         }
 
         return builder.establish()
+    }
+
+    private fun isAllowedExitInnerIp(innerIp: String): Boolean {
+        val address = try {
+            InetAddress.getByName(innerIp)
+        } catch (_: Exception) {
+            null
+        } as? Inet4Address ?: return false
+        val bytes = address.address
+        val fourth = bytes[3].toInt() and 0xFF
+        return fourth != 0 && fourth != 1 && fourth != 255
     }
 }
