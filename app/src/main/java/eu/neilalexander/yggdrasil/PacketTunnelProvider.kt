@@ -469,7 +469,7 @@ open class PacketTunnelProvider: VpnService() {
             return null
         }
 
-        val effectiveMtu = 1280
+        val effectiveMtu = activeConfig.mtu.trim().toIntOrNull()?.takeIf { it in 576..9000 } ?: 1280
 
         val builder = Builder()
             .addAddress(innerIp, 24)

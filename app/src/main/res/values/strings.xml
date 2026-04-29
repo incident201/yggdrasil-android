@@ -129,6 +129,7 @@
     <string name="exit_vpn_local_port">Local UDP port</string>
     <string name="exit_vpn_dns_server_1">DNS 1</string>
     <string name="exit_vpn_dns_server_2">DNS 2</string>
+    <string name="exit_vpn_mtu">MTU</string>
     <string name="exit_vpn_excluded_apps">Excluded apps</string>
     <string name="exit_vpn_select_excluded_apps">Select excluded apps</string>
     <string name="exit_vpn_excluded_apps_none">No excluded apps selected</string>

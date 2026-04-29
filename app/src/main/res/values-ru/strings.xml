@@ -116,6 +116,7 @@
     <string name="exit_vpn_local_port">Локальный UDP-порт</string>
     <string name="exit_vpn_dns_server_1">DNS 1</string>
     <string name="exit_vpn_dns_server_2">DNS 2</string>
+    <string name="exit_vpn_mtu">MTU</string>
     <string name="exit_vpn_excluded_apps">Исключённые приложения</string>
     <string name="exit_vpn_select_excluded_apps">Выбрать исключённые приложения</string>
     <string name="exit_vpn_excluded_apps_none">Нет исключённых приложений</string>
