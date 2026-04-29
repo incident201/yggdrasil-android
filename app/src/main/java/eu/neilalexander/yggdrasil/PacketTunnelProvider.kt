@@ -48,6 +48,7 @@ open class PacketTunnelProvider: VpnService() {
     private var writerStream: FileOutputStream? = null
     private var multicastLock: WifiManager.MulticastLock? = null
     private var exitModeEnabled = false
+    private var exitInnerIpBytes: ByteArray? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -167,6 +168,7 @@ open class PacketTunnelProvider: VpnService() {
         }
         yggdrasil.stop()
         exitModeEnabled = false
+        exitInnerIpBytes = null
 
         readerStream?.let {
             it.close()
@@ -395,6 +397,11 @@ open class PacketTunnelProvider: VpnService() {
                 if (n <= 0) {
                     continue
                 }
+
+                if (!isExpectedExitIPv4Packet(b, n)) {
+                    continue
+                }
+
                 try {
                     yggdrasil.sendTunnelBuffer(b, n.toLong())
                 } catch (e: Exception) {
@@ -469,6 +476,17 @@ open class PacketTunnelProvider: VpnService() {
             return null
         }
 
+        exitInnerIpBytes = try {
+            (InetAddress.getByName(innerIp) as? Inet4Address)?.address
+        } catch (_: Exception) {
+            null
+        }
+
+        if (exitInnerIpBytes == null) {
+            Log.e(TAG, "Exit mode inner IP is not valid IPv4")
+            return null
+        }
+
         val effectiveMtu = activeConfig.mtu.trim().toIntOrNull()?.takeIf { it in 576..9000 } ?: 1280
 
         val builder = Builder()
@@ -521,6 +539,29 @@ open class PacketTunnelProvider: VpnService() {
         }
 
         return builder.establish()
+    }
+
+    private fun isExpectedExitIPv4Packet(packet: ByteArray, length: Int): Boolean {
+        if (length < 20) {
+            return false
+        }
+
+        val version = (packet[0].toInt() ushr 4) and 0x0F
+        if (version != 4) {
+            return false
+        }
+
+        val ihl = (packet[0].toInt() and 0x0F) * 4
+        if (ihl < 20 || length < ihl) {
+            return false
+        }
+
+        val expected = exitInnerIpBytes ?: return false
+
+        return packet[12] == expected[0] &&
+            packet[13] == expected[1] &&
+            packet[14] == expected[2] &&
+            packet[15] == expected[3]
     }
 
     private fun isAllowedExitInnerIp(innerIp: String): Boolean {
