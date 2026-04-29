@@ -47,6 +47,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var exitLocalPortEntry: EditText
     private lateinit var exitDnsServer1Entry: EditText
     private lateinit var exitDnsServer2Entry: EditText
+    private lateinit var exitMtuEntry: EditText
     private lateinit var exitExcludedAppsButton: View
     private lateinit var exitExcludedAppsSummary: TextView
     private lateinit var publicKeyLabel: TextView
@@ -87,6 +88,7 @@ class SettingsActivity : AppCompatActivity() {
         exitLocalPortEntry = findViewById(R.id.exitLocalPortEntry)
         exitDnsServer1Entry = findViewById(R.id.exitDnsServer1Entry)
         exitDnsServer2Entry = findViewById(R.id.exitDnsServer2Entry)
+        exitMtuEntry = findViewById(R.id.exitMtuEntry)
         exitExcludedAppsButton = findViewById(R.id.exitExcludedAppsButton)
         exitExcludedAppsSummary = findViewById(R.id.exitExcludedAppsSummary)
         publicKeyLabel = findViewById(R.id.publicKeyLabel)
@@ -146,7 +148,8 @@ class SettingsActivity : AppCompatActivity() {
                 remotePort = exitRemotePortEntry.text?.toString().orEmpty(),
                 localPort = exitLocalPortEntry.text?.toString().orEmpty(),
                 dnsServer1 = exitDnsServer1Entry.text?.toString().orEmpty(),
-                dnsServer2 = exitDnsServer2Entry.text?.toString().orEmpty()
+                dnsServer2 = exitDnsServer2Entry.text?.toString().orEmpty(),
+                mtu = exitMtuEntry.text?.toString().orEmpty()
             )
             val displayNameChanged = exitConfigs[index].displayName != updated.displayName
             exitConfigs[index] = updated
@@ -163,6 +166,7 @@ class SettingsActivity : AppCompatActivity() {
         exitLocalPortEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
         exitDnsServer1Entry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
         exitDnsServer2Entry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
+        exitMtuEntry.doOnTextChanged { _, _, _, _ -> saveActiveConfigFromFields() }
 
         exitExcludedAppsButton.setOnClickListener { showExcludedAppsDialog() }
 
@@ -325,6 +329,7 @@ class SettingsActivity : AppCompatActivity() {
         exitLocalPortEntry.setText(activeConfig.localPort, TextView.BufferType.EDITABLE)
         exitDnsServer1Entry.setText(activeConfig.dnsServer1, TextView.BufferType.EDITABLE)
         exitDnsServer2Entry.setText(activeConfig.dnsServer2, TextView.BufferType.EDITABLE)
+        exitMtuEntry.setText(activeConfig.mtu, TextView.BufferType.EDITABLE)
         isUpdatingConfigFields = false
     }
 

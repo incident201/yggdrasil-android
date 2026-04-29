@@ -36,6 +36,7 @@ data class ExitVpnConfig(
     val localPort: String,
     val dnsServer1: String,
     val dnsServer2: String,
+    val mtu: String,
 )
 
 object ExitVpnConfigStore {
@@ -61,7 +62,8 @@ object ExitVpnConfigStore {
                         remotePort = item.optString("remotePort", ""),
                         localPort = item.optString("localPort", ""),
                         dnsServer1 = item.optString("dnsServer1", ""),
-                        dnsServer2 = item.optString("dnsServer2", "")
+                        dnsServer2 = item.optString("dnsServer2", ""),
+                        mtu = item.optString("mtu", "1280")
                     )
                 )
             }
@@ -98,6 +100,7 @@ object ExitVpnConfigStore {
                 put("localPort", config.localPort)
                 put("dnsServer1", config.dnsServer1)
                 put("dnsServer2", config.dnsServer2)
+                put("mtu", config.mtu)
             })
         }
         preferences.edit()
@@ -115,7 +118,8 @@ object ExitVpnConfigStore {
             remotePort = "",
             localPort = "",
             dnsServer1 = "",
-            dnsServer2 = ""
+            dnsServer2 = "",
+            mtu = "1280"
         )
     }
 
@@ -132,7 +136,8 @@ object ExitVpnConfigStore {
             remotePort = preferences.getString(PREF_KEY_EXIT_REMOTE_PORT, "").orEmpty(),
             localPort = preferences.getString(PREF_KEY_EXIT_LOCAL_PORT, "").orEmpty(),
             dnsServer1 = dnsServers.getOrNull(0).orEmpty(),
-            dnsServer2 = dnsServers.getOrNull(1).orEmpty()
+            dnsServer2 = dnsServers.getOrNull(1).orEmpty(),
+            mtu = "1280"
         )
     }
 }
